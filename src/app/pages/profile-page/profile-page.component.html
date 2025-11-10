@@ -1,0 +1,43 @@
+<div class="profile-container">
+    <div class="profile-card">
+        <h2>Профиль пользователя</h2>
+        
+        <div class="profile-content">
+            <div class="avatar-section">
+                <div class="avatar-circle">
+                    <img [src]="user.avatar" alt="Аватар" class="avatar-image" *ngIf="user.avatar">
+                    <div class="avatar-placeholder" *ngIf="!user.avatar">
+                        {{ getInitials() }}
+                    </div>
+                </div>
+                <div class="username">{{ user.username }}</div>
+            </div>
+            
+            <div class="stats-section">
+                <div class="stat-item">
+                    <span class="stat-label">Общее количество сыгранных игр:</span>
+                    <span class="stat-value">{{ user.totalGames }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Количество побед:</span>
+                    <span class="stat-value">{{ user.wins }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Количество поражений:</span>
+                    <span class="stat-value">{{ user.losses }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Количество сохраненных расстановок:</span>
+                    <span class="stat-value">{{ user.savedLayouts }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <button class="btn-action" (click)="changeAvatar()">Сменить аватар</button>
+            <button class="btn-action" (click)="changePassword()">Сменить пароль</button>
+        </div>
+    </div>
+    
+    <button class="lobby-button" routerLink="/lobby">Вернуться в лобби</button>
+</div>

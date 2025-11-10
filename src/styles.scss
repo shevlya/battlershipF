@@ -1,1 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background:
+            linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+            url('/assets/images/background.jpg') no-repeat center center fixed,
+            #2a5298;
+    background-size: cover;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    font-family: 'Arial', sans-serif;
+}

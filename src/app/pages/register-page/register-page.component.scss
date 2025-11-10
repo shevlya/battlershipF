@@ -1,0 +1,440 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background:
+            linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+            url('/src/assets/images/background.jpg') no-repeat center center fixed,
+            #2a5298;
+    background-size: cover;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    font-family: 'Arial', sans-serif;
+}
+
+.main-content {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    padding-top: 50px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.btn {
+    flex: none;
+    width: 240px;
+    padding: 14px 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    text-decoration: none;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background-color: rgba(220, 190, 255, 0.8);
+    transform: scale(1.03);
+}
+
+.btn-info-corner {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    backdrop-filter: blur(4px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-info-corner:hover {
+    background-color: rgba(220, 190, 255, 0.8);
+    transform: scale(1.03);
+}
+
+.main-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 90px;
+    letter-spacing: 2px;
+}
+
+.info-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.info-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.info-card h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+.info-text {
+    margin-bottom: 30px;
+    font-size: 1.05em;
+    text-align: center;
+    padding: 0 10px;
+    line-height: 1.6;
+}
+
+.btn-menu {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    background-color: rgba(220, 190, 255, 0.7);
+    color: white;
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    backdrop-filter: blur(4px);
+}
+
+.btn-menu:hover {
+    background-color: rgba(220, 190, 255, 0.8);
+    transform: scale(1.03);
+}
+
+.register-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.register-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 15px;
+    padding: 35px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+}
+
+.register-card h2 {
+    font-size: 2.8rem;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+}
+
+.register-card form {
+    text-align: left;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-card form {
+    text-align: left;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.input-label {
+    display: block;
+    margin: 4px 0 6px;
+    font-size: 1.1em;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px 16px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.1em;
+    font-weight: bold;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-field::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: normal;
+}
+
+.input-field:focus {
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.btn-register {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 12px auto 24px;
+    padding: 14px 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    backdrop-filter: blur(4px);
+}
+
+.btn-register:hover {
+    background-color: rgba(220, 190, 255, 0.8);
+    transform: scale(1.03);
+}
+
+.btn-back {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    background-color: rgba(131, 116, 154, 0.2);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    backdrop-filter: blur(4px);
+}
+
+.btn-back:hover {
+    background-color: rgba(131, 116, 154, 0.2);
+    transform: scale(1.03);
+}
+
+.login-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 15px;
+    padding: 35px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+}
+
+.login-card h2 {
+    font-size: 2.8rem;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+}
+
+.btn-login {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 12px auto 24px;
+    padding: 14px 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    backdrop-filter: blur(4px);
+}
+
+.btn-login:hover {
+    background-color: rgba(220, 190, 255, 0.8);
+    transform: scale(1.03);
+}
+
+.input-label {
+    display: block;
+    margin: 4px 0 6px;
+    font-size: 1.1em;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 600px) {
+    .main-content h1 {
+        font-size: 2.5rem;
+        margin-bottom: 60px;
+    }
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+    .btn {
+        width: 100%;
+        max-width: 280px;
+        white-space: normal;
+    }
+    .btn-info-corner {
+        padding: 8px 16px;
+        font-size: 1em;
+    }
+    .info-card {
+        padding: 20px;
+        max-width: 90%;
+    }
+    .info-card h2 {
+        font-size: 2rem;
+    }
+    .info-text {
+        font-size: 0.95em;
+    }
+    .btn-menu {
+        font-size: 1em;
+        padding: 10px 16px;
+    }
+    .register-card {
+        padding: 20px;
+        max-width: 90%;
+    }
+    .register-card h2 {
+        font-size: 2.2rem;
+    }
+    .input-field {
+        font-size: 1em;
+        padding: 10px 14px;
+    }
+    .btn-register {
+        margin: 12px auto 20px;
+        font-size: 1.1em;
+        padding: 12px 20px;
+        max-width: 260px;
+    }
+    .btn-back {
+        font-size: 1.1em;
+        padding: 12px 20px;
+        max-width: 260px;
+        background-color: rgba(131, 116, 154, 0.2);
+        color: rgba(255, 255, 255, 0.85);
+    }
+    .btn-back:hover {
+        background-color: rgba(131, 116, 154, 0.2);
+    }
+    .register-card form {
+        text-align: left;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .input-label {
+        margin: 3px 0 5px;
+        font-size: 1em;
+    }
+    .input-field {
+        margin: 6px 0;
+        font-size: 1em;
+        padding: 10px 14px;
+    }
+    .login-card {
+        padding: 20px;
+        max-width: 90%;
+    }
+    .login-card h2 {
+        font-size: 2rem;
+    }
+    .input-field {
+        font-size: 1em;
+        padding: 10px 14px;
+    }
+    .btn-login {
+        margin: 12px auto 20px;
+        font-size: 1.1em;
+        padding: 12px 20px;
+        max-width: 260px;
+        background-color: rgba(220, 190, 255, 0.6);
+        color: white;
+    }
+    .btn-login:hover {
+        background-color: rgba(220, 190, 255, 0.8);
+    }
+    .login-card form {
+        text-align: left;
+        width: 100%;
+        margin: 0 auto;
+    }
+}

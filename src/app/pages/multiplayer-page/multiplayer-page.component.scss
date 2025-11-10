@@ -1,0 +1,245 @@
+.multiplayer-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.multiplayer-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 15px;
+    padding: 35px;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+}
+
+.multiplayer-card h2 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+}
+
+.players-table {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 15px 15px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.players-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.player-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.avatar-container {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.username {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white;
+}
+
+.invite-btn {
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+    
+    &:hover {
+        background-color: rgba(220, 190, 255, 0.8);
+        transform: scale(1.05);
+    }
+    
+    &:disabled {
+        background-color: rgba(131, 116, 154, 0.3);
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.start-game-btn {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 20px auto;
+    padding: 14px 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    
+    &:hover {
+        background-color: rgba(220, 190, 255, 0.8);
+        transform: scale(1.03);
+    }
+}
+
+.btn-back {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    background-color: rgba(131, 116, 154, 0.2);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    backdrop-filter: blur(4px);
+    
+    &:hover {
+        background-color: rgba(131, 116, 154, 0.3);
+        transform: scale(1.03);
+    }
+}
+
+.btn-info-corner {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(220, 190, 255, 0.6);
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    backdrop-filter: blur(4px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    
+    &:hover {
+        background-color: rgba(220, 190, 255, 0.8);
+        transform: scale(1.03);
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 600px) {
+    .multiplayer-container {
+        padding: 15px;
+    }
+    
+    .multiplayer-card {
+        padding: 20px;
+        max-width: 95%;
+    }
+    
+    .multiplayer-card h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+    
+    .players-table {
+        padding: 15px;
+    }
+    
+    .table-header {
+        padding: 0 10px 10px 10px;
+        font-size: 1em;
+    }
+    
+    .player-row {
+        padding: 12px 10px;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .player-info {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .username {
+        font-size: 1em;
+    }
+    
+    .invite-btn {
+        width: 100%;
+        padding: 10px;
+    }
+    
+    .start-game-btn,
+    .btn-back {
+        max-width: 260px;
+        padding: 12px 20px;
+        font-size: 1.1em;
+    }
+    
+    .btn-info-corner {
+        padding: 8px 16px;
+        font-size: 1em;
+    }
+}

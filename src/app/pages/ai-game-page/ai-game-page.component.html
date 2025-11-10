@@ -1,0 +1,34 @@
+<div class="difficulty-container">
+    <button class="lobby-button" routerLink="/lobby">← Вернуться в лобби</button>
+    
+    <div class="difficulty-card">
+        <h2>Уровень сложности</h2>
+        
+        <div class="difficulty-options">
+            <button class="difficulty-option" 
+                    [class.active]="selectedDifficulty === 'sailor'"
+                    (click)="selectDifficulty('sailor')">
+                Матрос
+            </button>
+            
+            <button class="difficulty-option"
+                    [class.active]="selectedDifficulty === 'captain'"
+                    (click)="selectDifficulty('captain')">
+                Капитан
+            </button>
+            
+            <button class="difficulty-option"
+                    [class.active]="selectedDifficulty === 'admiral'"
+                    (click)="selectDifficulty('admiral')">
+                Адмирал
+            </button>
+        </div>
+
+        <button class="start-button" 
+                [class.disabled]="!selectedDifficulty"
+                (click)="startGame()"
+                [disabled]="!selectedDifficulty">
+            Начать игру
+        </button>
+    </div>
+</div>

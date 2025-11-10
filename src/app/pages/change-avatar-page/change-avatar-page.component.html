@@ -1,0 +1,42 @@
+<div class="avatar-container">
+    <div class="avatar-card">
+        <h2>Доступные аватары</h2>
+        
+        <div class="avatar-content">
+            <div class="current-avatar-section">
+                <div class="avatar-circle large">
+                    <img [src]="currentAvatar" alt="Текущий аватар" class="avatar-image" *ngIf="currentAvatar">
+                    <div class="avatar-placeholder" *ngIf="!currentAvatar">
+                        {{ getInitials() }}
+                    </div>
+                </div>
+                <div class="username">{{ username }}</div>
+            </div>
+            
+            <div class="avatars-grid">
+                <div class="avatar-row">
+                    <div *ngFor="let avatar of availableAvatars.slice(0, 5); let i = index" 
+                         class="avatar-option" 
+                         [class.selected]="selectedAvatar === avatar"
+                         (click)="selectAvatar(avatar)">
+                        <img [src]="avatar" alt="Аватар {{i+1}}" class="avatar-image">
+                    </div>
+                </div>
+                <div class="avatar-row">
+                    <div *ngFor="let avatar of availableAvatars.slice(5, 10); let i = index" 
+                         class="avatar-option" 
+                         [class.selected]="selectedAvatar === avatar"
+                         (click)="selectAvatar(avatar)">
+                        <img [src]="avatar" alt="Аватар {{i+6}}" class="avatar-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="change-button" (click)="changeAvatar()" [disabled]="!selectedAvatar">
+            Сменить аватар
+        </button>
+    </div>
+    
+    <button class="lobby-button" routerLink="/lobby">Вернуться в лобби</button>
+</div>

@@ -1,0 +1,29 @@
+<div class="multiplayer-container">
+    <div class="multiplayer-card">
+        <h2>Мультиплеерная игра</h2>
+        
+        <div class="players-table">
+            <div class="table-header">
+                <span>Игрок</span>
+                <span>Действие</span>
+            </div>
+            
+            <ul class="players-list">
+                <li class="player-row" *ngFor="let player of players">
+                    <div class="player-info">
+                        <div class="avatar-container">
+                            <img [src]="player.avatar" [alt]="player.username" class="avatar">
+                        </div>
+                        <span class="username">{{ player.username }}</span>
+                    </div>
+                    <button class="invite-btn" (click)="invitePlayer(player)">
+                        пригласить
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <button class="start-game-btn" (click)="startGame()">Начать игру</button>
+        <a routerLink="/lobby" class="btn-back">Вернуться в лобби</a>
+    </div>
+</div>

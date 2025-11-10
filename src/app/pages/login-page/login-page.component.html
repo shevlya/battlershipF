@@ -1,0 +1,19 @@
+<div class="login-container">
+    <div class="login-card">
+        <h2>Авторизация</h2>
+        <form (ngSubmit)="onSubmit()">
+            <label for="username" class="input-label">Логин</label>
+            <input type="text" id="username" name="username" 
+                   [(ngModel)]="username" placeholder="Введите логин" 
+                   required class="input-field">
+
+            <label for="password" class="input-label">Пароль</label>
+            <input type="password" id="password" name="password" 
+                   [(ngModel)]="password" placeholder="Введите пароль" 
+                   required class="input-field">
+
+            <button type="submit" class="btn-login">Авторизация</button>
+        </form>
+        <a routerLink="/" class="btn-back">Назад</a>
+    </div>
+</div>

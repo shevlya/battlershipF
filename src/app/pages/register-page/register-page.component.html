@@ -1,0 +1,24 @@
+<div class="register-container">
+    <div class="register-card">
+        <h2>Регистрация</h2>
+        <form (ngSubmit)="onSubmit()">
+            <label for="username" class="input-label">Логин</label>
+            <input type="text" id="username" name="username" 
+                   [(ngModel)]="username" placeholder="Введите логин" 
+                   required minlength="3" class="input-field">
+
+            <label for="password" class="input-label">Пароль</label>
+            <input type="password" id="password" name="password" 
+                   [(ngModel)]="password" placeholder="Введите пароль" 
+                   required minlength="6" class="input-field">
+
+            <label for="confirmPassword" class="input-label">Повторите пароль</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" 
+                   [(ngModel)]="confirmPassword" placeholder="Повторите пароль" 
+                   required class="input-field">
+
+            <button type="submit" class="btn-register">Зарегистрироваться</button>
+        </form>
+        <a routerLink="/" class="btn-back">Назад</a>
+    </div>
+</div>

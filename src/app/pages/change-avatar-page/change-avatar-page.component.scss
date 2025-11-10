@@ -1,0 +1,222 @@
+.avatar-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.avatar-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 15px;
+    padding: 40px 30px;
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+    margin-bottom: 30px;
+}
+
+.avatar-card h2 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+    /*text-transform: uppercase;*/
+}
+
+.avatar-content {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.current-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+.avatar-circle {
+    width: 140px; /* Увеличено с 120px */
+    height: 140px; /* Увеличено с 120px */
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    border: 3px solid white;
+    overflow: hidden;
+    
+    &.large {
+        width: 160px; /* Увеличено с 140px */
+        height: 160px; /* Увеличено с 140px */
+    }
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    font-size: 3.5rem; /* Увеличено с 3rem */
+    font-weight: bold;
+    color: white;
+}
+
+.username {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: white;
+}
+
+.avatars-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.avatar-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.avatar-option {
+    width: 85px; /* Увеличено с 70px */
+    height: 85px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    
+    &:hover {
+        transform: scale(1.1);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    &.selected {
+        border-color: white;
+        transform: scale(1.15);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    }
+}
+
+.change-button {
+    padding: 12px 24px;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+    margin: 0 auto;
+    display: block;
+
+    &:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
+    
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.lobby-button {
+    padding: 12px 24px;
+    background-color: rgba(220, 190, 255, 0.7);
+    color: white;
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+
+    &:hover {
+        background-color: rgba(220, 190, 255, 0.8);
+        transform: scale(1.03);
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .avatar-card {
+        padding: 30px 20px;
+        max-width: 90%;
+    }
+    
+    .avatar-card h2 {
+        font-size: 2rem;
+    }
+    
+    .avatar-content {
+        flex-direction: column;
+        gap: 25px;
+        align-items: center;
+    }
+    
+    .avatars-grid {
+        width: 100%;
+    }
+    
+    .avatar-row {
+        gap: 15px; /* Увеличено с 10px */
+    }
+    
+    .avatar-option {
+        width: 70px; /* Увеличено с 60px */
+        height: 70px; /* Увеличено с 60px */
+    }
+    
+    .avatar-circle {
+        width: 120px; /* Увеличено с 100px */
+        height: 120px; /* Увеличено с 100px */
+        
+        &.large {
+            width: 140px; /* Увеличено с 120px */
+            height: 140px; /* Увеличено с 120px */
+        }
+    }
+    
+    .avatar-placeholder {
+        font-size: 3rem; /* Увеличено с 2.5rem */
+    }
+}
+
+@media (max-width: 480px) {
+    .avatar-container {
+        padding: 15px;
+    }
+    
+    .avatar-card {
+        padding: 25px 15px;
+    }
+    
+    .avatar-card h2 {
+        font-size: 1.8rem;
+    }
+    
+    .avatar-option {
+        width: 60px;
+        height: 60px;
+    }
+}

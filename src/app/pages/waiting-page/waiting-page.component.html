@@ -1,0 +1,20 @@
+<div class="waiting-container">
+    <div class="waiting-card">
+        <h2>Ожидание соперника</h2>
+        
+        <div class="waiting-text">
+            Поиск игрока<span class="loading-dots"></span>
+        </div>
+        
+        <div class="waiting-icon">
+            <img src="/assets/images/waiting-device.jpg" alt="Устройство ожидания" class="waiting-image">
+        </div>
+        
+        <div class="waiting-stats">
+            <p>Время ожидания: <strong>{{ waitingTime }} сек.</strong></p>
+            <p>Найдено игроков: <strong>{{ foundPlayers }}/1</strong></p>
+        </div>
+        
+        <button class="btn-cancel" (click)="cancelWaiting()">Отключить</button>
+    </div>
+</div>

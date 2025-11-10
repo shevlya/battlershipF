@@ -1,0 +1,219 @@
+.win-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+        url('/assets/images/background.jpg') no-repeat center center fixed,
+        #2a5298;
+    background-size: cover;
+}
+
+.win-card {
+    background-color: rgba(220, 190, 255, 0.7);
+    border-radius: 20px;
+    padding: 50px 40px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    color: white;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.congrats-text {
+    font-size: 3.5rem;
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    animation: bounceIn 1s ease-out;
+}
+
+.win-text {
+    font-size: 2.2rem;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    animation: slideIn 1s ease-out 0.3s both;
+}
+
+.celebration-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 30px auto;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    border: 4px solid rgba(255, 215, 0, 0.6);
+    animation: pulseGold 2s infinite ease-in-out, zoomIn 1s ease-out 0.6s both;
+}
+
+.celebration-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.btn-lobby {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 30px auto 0;
+    padding: 16px 24px;
+    background-color: rgba(220, 190, 255, 0.8);
+    color: white;
+    font-size: 1.3em;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    text-decoration: none;
+    animation: fadeIn 1s ease-out 1s both;
+    
+    &:hover {
+        background-color: rgba(220, 190, 255, 1);
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulseGold {
+    0% {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 215, 0, 0.6);
+    }
+    50% {
+        box-shadow: 0 6px 30px rgba(255, 215, 0, 0.4);
+        border-color: rgba(255, 215, 0, 0.9);
+    }
+    100% {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 215, 0, 0.6);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 600px) {
+    .win-container {
+        padding: 15px;
+    }
+    
+    .win-card {
+        padding: 40px 25px;
+        max-width: 90%;
+    }
+    
+    .congrats-text {
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .win-text {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+    }
+    
+    .celebration-circle {
+        width: 170px;
+        height: 170px;
+        margin: 25px auto;
+    }
+    
+    .btn-lobby {
+        max-width: 260px;
+        padding: 14px 20px;
+        font-size: 1.2em;
+        margin-top: 25px;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 400px) {
+    .congrats-text {
+        font-size: 2.3rem;
+    }
+    
+    .win-text {
+        font-size: 1.5rem;
+    }
+    
+    .celebration-circle {
+        width: 150px;
+        height: 150px;
+    }
+}
