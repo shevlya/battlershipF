@@ -4,5 +4,5 @@
 [Angular CLI](https://github.com/angular/angular-cli) 
 ## Для запуска
 
-`ng serve` 
+`ng serve` - в терминальчике в VS code  
 `http://localhost:4200/`
