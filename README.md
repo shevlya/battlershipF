@@ -1,7 +1,11 @@
 # К прочтению
 
-Версия моего ангуляра 17.3.1  
-[Angular CLI](https://github.com/angular/angular-cli) 
+Мои версии:
+Angular CLI: 17.3.17
+[Angular CLI](https://github.com/angular/angular-cli)  
+Node: 20.9.0
+Package Manager: npm 10.1.0
+
 ## Для запуска
 
 `ng serve` - в терминальчике в VS code  
