@@ -1,4 +1,4 @@
-# Battleship
+# К прочтению
 
 Версия моего ангуляра 17.3.1  
 [Angular CLI](https://github.com/angular/angular-cli) 
