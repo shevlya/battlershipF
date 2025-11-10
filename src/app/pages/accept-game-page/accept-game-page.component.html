@@ -12,7 +12,6 @@
         <!-- Ошибка -->
         <div *ngIf="errorMessage && !isLoading" class="error">
             <p>{{ errorMessage }}</p>
-            <!-- Используем метод navigateToLobby вместо прямого доступа к router -->
             <button class="btn-back" (click)="navigateToLobby()">Вернуться в лобби</button>
         </div>
 
@@ -27,14 +26,6 @@
                 </div>
                 <p class="player-name">{{ invitation.inviter.username }}</p>
                 <p class="invite-text">приглашает вас в игру</p>
-                
-                <!-- Дополнительная информация об игроке -->
-                <div class="player-stats" *ngIf="invitation.inviter.rating !== undefined">
-                    <p>Рейтинг: <strong>{{ invitation.inviter.rating }}</strong></p>
-                    <p *ngIf="invitation.inviter.gamesPlayed !== undefined">
-                        Игр сыграно: <strong>{{ invitation.inviter.gamesPlayed }}</strong>
-                    </p>
-                </div>
             </div>
 
             <div class="encouragement-circle">

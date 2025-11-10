@@ -29,7 +29,7 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
   invitation: Invitation | null = null;
   isLoading = true;
   errorMessage = '';
-  timeLeft = 30; // 30 секунд на принятие решения
+  timeLeft = 60; // 60 секунд на принятие решения
   private timer: any;
 
   constructor(
