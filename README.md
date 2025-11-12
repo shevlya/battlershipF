@@ -9,7 +9,7 @@ Package Manager: npm 10.1.0
 ## Для запуска
 
 `ng serve` - в терминальчике в VS code  
-`http://localhost:4200/`
+`http://localhost:4201/`
 
 ## Как это пока выглядит
 
