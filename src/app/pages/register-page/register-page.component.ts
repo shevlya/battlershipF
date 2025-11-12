@@ -16,31 +16,88 @@ export class RegisterPageComponent {
   confirmPassword = '';
   registerError = false;
   passwordMismatch = false;
-  passwordTooShort = false; // Новое поле
+  passwordTooShort = false;
+  invalidUsername = false;
+  usernameTooShort = false; // Новая переменная для ошибки длины логина
+  fieldsEmpty = false;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
+  // Метод для валидации логина
+  validateUsername() {
+    // Регулярное выражение: начинается с буквы, затем могут быть буквы, цифры, точка, подчеркивание, дефис
+    const usernameRegex = /^[a-zA-Z][a-zA-Z0-9._-]*$/;
+    this.invalidUsername = this.username.length > 0 && !usernameRegex.test(this.username);
+    
+    // Проверка минимальной длины логина
+    this.usernameTooShort = this.username.length > 0 && this.username.length < 3;
+  }
+
+  // Очистка ошибок при вводе в поле логина
+  onUsernameInput() {
+    this.registerError = false;
+    this.invalidUsername = false;
+    this.usernameTooShort = false;
+    this.fieldsEmpty = false;
+    this.validateUsername();
+  }
+
+  // Очистка ошибок при вводе в поле пароля
+  onPasswordInput() {
+    this.registerError = false;
+    this.passwordTooShort = false;
+    this.passwordMismatch = false;
+    this.fieldsEmpty = false;
+  }
+
+  // Очистка ошибок при вводе в поле подтверждения пароля
+  onConfirmPasswordInput() {
+    this.registerError = false;
+    this.passwordMismatch = false;
+    this.fieldsEmpty = false;
+  }
+
   onSubmit() {
     // Сброс ошибок
     this.registerError = false;
     this.passwordMismatch = false;
     this.passwordTooShort = false;
+    this.invalidUsername = false;
+    this.usernameTooShort = false;
+    this.fieldsEmpty = false;
 
-    // Валидация
-    if (!this.username || !this.password || !this.confirmPassword) {
+    // Проверка на пустые поля
+    if (!this.username.trim() || !this.password || !this.confirmPassword) {
+      this.fieldsEmpty = true;
       console.error('Все поля обязательны');
       return;
     }
 
+    // Валидация логина
+    this.validateUsername();
+    if (this.invalidUsername) {
+      console.error('Логин содержит запрещенные символы');
+      return;
+    }
+
+    // Валидация длины логина
+    if (this.username.length < 3) {
+      this.usernameTooShort = true;
+      console.error('Логин должен быть не менее 3 символов');
+      return;
+    }
+
+    // Валидация длины пароля
     if (this.password.length < 6) {
-      this.passwordTooShort = true; // Устанавливаем флаг
+      this.passwordTooShort = true;
       console.error('Пароль должен быть не менее 6 символов');
       return;
     }
 
+    // Валидация совпадения паролей
     if (this.password !== this.confirmPassword) {
       this.passwordMismatch = true;
       console.error('Пароли не совпадают');
