@@ -1,22 +1,35 @@
 <div class="login-container">
   <div class="login-card">
     <h2>Авторизация</h2>
-    <!-- Сообщение об ошибке -->
+
+    <!-- Сообщения об ошибках -->
     @if(loginError) {
-      <div class="error-message" style="color: red; margin-bottom: 10px; text-align: center;">
-        Неверный логин или пароль
+      <div class="error-message">
+        <div class="error-text">Неверный логин или пароль</div>
       </div>
     }
-    <form (ngSubmit)="onSubmit()">
-      <label for="username" class="input-label">Логин</label>
-      <input type="text" id="username" name="username"
-             [(ngModel)]="username" placeholder="Введите логин"
-             required class="input-field">
+    @if(fieldsEmpty) {
+      <div class="error-message">
+        <div class="error-text">Все поля обязательны для заполнения!</div>
+      </div>
+    }
 
-      <label for="password" class="input-label">Пароль</label>
-      <input type="password" id="password" name="password"
-             [(ngModel)]="password" placeholder="Введите пароль"
-             required class="input-field">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-row" [class.form-row-error]="loginError || (fieldsEmpty && !username.trim())">
+        <label for="username" class="input-label">Логин</label>
+        <input type="text" id="username" name="username"
+               [(ngModel)]="username" placeholder="Введите логин"
+               required class="input-field"
+               (input)="onUsernameInput()">
+      </div>
+
+      <div class="form-row" [class.form-row-error]="loginError || (fieldsEmpty && !password)">
+        <label for="password" class="input-label">Пароль</label>
+        <input type="password" id="password" name="password"
+               [(ngModel)]="password" placeholder="Введите пароль"
+               required class="input-field"
+               (input)="onPasswordInput()">
+      </div>
 
       <button type="submit" class="btn-login">Войти</button>
     </form>
