@@ -13,16 +13,35 @@ import { AuthService } from '../../services/auth.service';
 export class LoginPageComponent {
   username = '';
   password = '';
-  loginError = false; // Для отображения ошибки
+  loginError = false;
+  fieldsEmpty = false;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
+  // Очистка ошибок при вводе в поле логина
+  onUsernameInput() {
+    this.loginError = false;
+    this.fieldsEmpty = false;
+  }
+
+  // Очистка ошибок при вводе в поле пароля
+  onPasswordInput() {
+    this.loginError = false;
+    this.fieldsEmpty = false;
+  }
+
   onSubmit() {
-    if (!this.username || !this.password) {
-      console.error('Логин и пароль обязательны');
+    // Сброс ошибок
+    this.loginError = false;
+    this.fieldsEmpty = false;
+
+    // Проверка на пустые поля
+    if (!this.username.trim() || !this.password) {
+      this.fieldsEmpty = true;
+      console.error('Все поля обязательны');
       return;
     }
 
@@ -38,7 +57,6 @@ export class LoginPageComponent {
       error: (err) => {
         console.error('Ошибка авторизации:', err);
         this.loginError = true;
-        // Можно показать сообщение об ошибке пользователю
       }
     });
   }
