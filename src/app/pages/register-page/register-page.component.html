@@ -4,18 +4,33 @@
 
     <!-- Сообщения об ошибках -->
     @if(registerError) {
-      <div class="error-message" style="color: red; margin-bottom: 10px; text-align: center;">
-        Ошибка регистрации: возможно, логин уже занят.
+      <div class="error-message">
+        <div class="error-text">Ошибка регистрации: логин уже занят.</div>
       </div>
     }
     @if(passwordMismatch) {
-      <div class="error-message" style="color: red; margin-bottom: 10px; text-align: center;">
-        Пароли не совпадают!
+      <div class="error-message">
+        <div class="error-text">Пароли не совпадают!</div>
       </div>
     }
     @if(passwordTooShort) {
-      <div class="error-message" style="color: red; margin-bottom: 10px; text-align: center;">
-        Пароль должен быть не менее 6 символов!
+      <div class="error-message">
+        <div class="error-text">Пароль должен быть не менее 6 символов!</div>
+      </div>
+    }
+    @if(invalidUsername) {
+      <div class="error-message">
+        <div class="error-text">Логин должен начинаться с буквы и может содержать только английские буквы, цифры и символы: точка (.), нижнее подчёркивание (_), дефис (-). Логин не может состоять только из цифр</div>
+      </div>
+    }
+    @if(usernameTooShort) {
+      <div class="error-message">
+        <div class="error-text">Логин должен быть не менее 3 символов!</div>
+      </div>
+    }
+    @if(fieldsEmpty) {
+      <div class="error-message">
+        <div class="error-text">Все поля обязательны для заполнения!</div>
       </div>
     }
 
@@ -23,17 +38,23 @@
       <label for="username" class="input-label">Логин</label>
       <input type="text" id="username" name="username"
              [(ngModel)]="username" placeholder="Введите логин"
-             required minlength="3" class="input-field">
+             required minlength="3" class="input-field"
+             [class.input-field-error]="invalidUsername || usernameTooShort"
+             (input)="onUsernameInput()">
 
       <label for="password" class="input-label">Пароль</label>
       <input type="password" id="password" name="password"
              [(ngModel)]="password" placeholder="Введите пароль"
-             required minlength="6" class="input-field">
+             required minlength="6" class="input-field"
+             [class.input-field-error]="passwordTooShort"
+             (input)="onPasswordInput()">
 
       <label for="confirmPassword" class="input-label">Повторите пароль</label>
       <input type="password" id="confirmPassword" name="confirmPassword"
              [(ngModel)]="confirmPassword" placeholder="Повторите пароль"
-             required class="input-field">
+             required class="input-field"
+             [class.input-field-error]="passwordMismatch"
+             (input)="onConfirmPasswordInput()">
 
       <button type="submit" class="btn-register">Зарегистрироваться</button>
     </form>
