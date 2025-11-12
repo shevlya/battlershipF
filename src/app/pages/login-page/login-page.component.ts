@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login-page',
@@ -12,23 +13,33 @@ import { RouterModule, Router } from '@angular/router';
 export class LoginPageComponent {
   username = '';
   password = '';
+  loginError = false; // Для отображения ошибки
 
-  constructor(private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   onSubmit() {
-    // Здесь будет вызов сервиса для авторизации
-    console.log('Авторизация:', {
-      username: this.username,
-      password: this.password
-    });
+    if (!this.username || !this.password) {
+      console.error('Логин и пароль обязательны');
+      return;
+    }
 
-    // После успешной авторизации перенаправляем в лобби
-    // this.authService.login(this.username, this.password).subscribe(
-    //   success => {
-    //     if (success) {
-          this.router.navigate(['/lobby']);
-    //     }
-    //   }
-    // );
+    this.authService.login(this.username, this.password).subscribe({
+      next: (response) => {
+        // Сохраняем токен и данные пользователя
+        this.authService.setTokenAndUser(response.token, response);
+        console.log('Успешная авторизация:', response);
+        this.loginError = false;
+        // Перенаправляем в лобби
+        this.router.navigate(['/lobby']);
+      },
+      error: (err) => {
+        console.error('Ошибка авторизации:', err);
+        this.loginError = true;
+        // Можно показать сообщение об ошибке пользователю
+      }
+    });
   }
 }
