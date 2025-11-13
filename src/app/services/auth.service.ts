@@ -27,7 +27,7 @@ interface SignupRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:8080/api/auth'; // Убедитесь, что URL правильный
+  private readonly API_URL = 'http://192.168.0.103:8080/api/auth'; // This is your IP in local area connection
   private readonly TOKEN_KEY = 'auth-token';
   private readonly USER_KEY = 'auth-user';
 
