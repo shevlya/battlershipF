@@ -165,4 +165,20 @@ export class AuthService {
   getUser(): any {
     return this.getCurrentUser();
   }
+
+  changePassword(oldPassword: string, newPassword: string): Observable<any> {
+    const url = `http://localhost:8080/api/auth/change-password`;
+    
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
+    });
+
+    const body = {
+      oldPassword,
+      newPassword
+    };
+
+    return this.http.post(url, body, { headers });
+  }
 }
