@@ -2,15 +2,24 @@
     <div class="profile-card">
         <h2>Профиль пользователя</h2>
         
+        <!-- Отладочная информация -->
+        <!--- <div *ngIf="user.avatarUrl" style="color: green; font-size: 12px; margin-bottom: 10px;">
+            Аватар в данных: {{ user.avatarUrl }}
+        </div>
+        <div *ngIf="!user.avatarUrl" style="color: orange; font-size: 12px; margin-bottom: 10px;">
+            Аватар не установлен
+        </div> --->
+        
         <div class="profile-content">
             <div class="avatar-section">
                 <div class="avatar-circle">
-                    <img [src]="user.avatar" alt="Аватар" class="avatar-image" *ngIf="user.avatar">
-                    <div class="avatar-placeholder" *ngIf="!user.avatar">
+                    <!-- Используем avatarUrl вместо avatar_url -->
+                    <img [src]="getAvatarPath(user.avatarUrl)" alt="Аватар" class="avatar-image" *ngIf="user.avatarUrl">
+                    <div class="avatar-placeholder" *ngIf="!user.avatarUrl">
                         {{ getInitials() }}
                     </div>
                 </div>
-                <div class="username">{{ user.username }}</div>
+                <div class="username">{{ user.nickname }}</div>
             </div>
             
             <div class="stats-section">
