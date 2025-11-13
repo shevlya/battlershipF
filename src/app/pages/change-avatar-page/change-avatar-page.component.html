@@ -2,10 +2,15 @@
     <div class="avatar-card">
         <h2>Доступные аватары</h2>
         
+        <!-- Отладочная информация -->
+        <!--- <div *ngIf="currentAvatar" style="color: green; font-size: 12px; margin-bottom: 10px;">
+            Текущий аватар: {{ currentAvatar }}
+        </div> --->
+        
         <div class="avatar-content">
             <div class="current-avatar-section">
                 <div class="avatar-circle large">
-                    <img [src]="currentAvatar" alt="Текущий аватар" class="avatar-image" *ngIf="currentAvatar">
+                    <img [src]="getAvatarPath(currentAvatar)" alt="Текущий аватар" class="avatar-image" *ngIf="currentAvatar">
                     <div class="avatar-placeholder" *ngIf="!currentAvatar">
                         {{ getInitials() }}
                     </div>
@@ -19,7 +24,7 @@
                          class="avatar-option" 
                          [class.selected]="selectedAvatar === avatar"
                          (click)="selectAvatar(avatar)">
-                        <img [src]="avatar" alt="Аватар {{i+1}}" class="avatar-image">
+                        <img [src]="getAvatarPath(avatar)" [alt]="'Аватар ' + (i+1)" class="avatar-image">
                     </div>
                 </div>
                 <div class="avatar-row">
@@ -27,7 +32,7 @@
                          class="avatar-option" 
                          [class.selected]="selectedAvatar === avatar"
                          (click)="selectAvatar(avatar)">
-                        <img [src]="avatar" alt="Аватар {{i+6}}" class="avatar-image">
+                        <img [src]="getAvatarPath(avatar)" [alt]="'Аватар ' + (i+6)" class="avatar-image">
                     </div>
                 </div>
             </div>
@@ -38,5 +43,5 @@
         </button>
     </div>
     
-    <button class="lobby-button" routerLink="/lobby">Вернуться в лобби</button>
+    <button class="lobby-button" routerLink="/profile">Вернуться в профиль</button>
 </div>
