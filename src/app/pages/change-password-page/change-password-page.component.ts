@@ -1,5 +1,4 @@
-// change-password-page.component.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './change-password-page.component.html',
   styleUrl: './change-password-page.component.scss'
 })
-export class ChangePasswordPageComponent {
+export class ChangePasswordPageComponent implements OnInit {
   passwordData = {
     oldPassword: '',
     newPassword: '',
@@ -21,8 +20,9 @@ export class ChangePasswordPageComponent {
 
   isLoading = false;
   success = false;
+  sessionExpired = false;
 
-  // Ошибки (как в регистрации)
+  // Ошибки валидации
   fieldsEmpty = false;
   passwordMismatch = false;
   passwordTooShort = false;
@@ -35,12 +35,54 @@ export class ChangePasswordPageComponent {
     private authService: AuthService
   ) {}
 
+  ngOnInit() {
+    // Проверяем токен при загрузке компонента
+    this.checkToken();
+  }
+
+  checkToken() {
+    if (this.authService.isTokenExpired()) {
+      this.sessionExpired = true;
+      console.log('🔴 Токен просрочен, требуется перелогин');
+    } else {
+      console.log('🟢 Токен валиден');
+    }
+  }
+
+  refreshSession() {
+    console.log('🔄 Обновление сессии...');
+    
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      // Сохраняем данные пользователя
+      const username = currentUser.nickname;
+      
+      // Очищаем старые данные
+      this.authService.logout();
+      
+      // Перенаправляем на логин
+      this.router.navigate(['/login'], { 
+        state: { 
+          message: 'Пожалуйста, войдите снова для смены пароля',
+          username: username 
+        }
+      });
+    }
+  }
+
   changePassword() {
+    // Проверяем токен перед отправкой
+    if (this.authService.isTokenExpired()) {
+      this.sessionExpired = true;
+      this.generalError = 'Сессия истекла. Пожалуйста, войдите снова.';
+      return;
+    }
+
     // Сброс ошибок и успеха
     this.clearErrors();
     this.success = false;
 
-    // Валидация паролей (как в регистрации)
+    // Валидация паролей
     if (!this.passwordData.oldPassword || !this.passwordData.newPassword || !this.passwordData.confirmPassword) {
       this.fieldsEmpty = true;
       return;
@@ -86,22 +128,23 @@ export class ChangePasswordPageComponent {
         console.error('Ошибка при смене пароля:', error);
         this.isLoading = false;
         
-        if (error.status === 400) {
+        if (error.status === 401) {
+          this.sessionExpired = true;
+          this.generalError = 'Сессия истекла. Пожалуйста, войдите снова.';
+        } else if (error.status === 400) {
           if (error.error?.message === 'Неверный старый пароль') {
             this.oldPasswordIncorrect = true;
           } else {
             this.generalError = error.error?.message || 'Ошибка при смене пароля';
           }
-        } else if (error.status === 401) {
-          this.generalError = 'Сессия истекла. Пожалуйста, войдите снова.';
         } else {
-          this.generalError = 'Произошла ошибка при смене пароля. Попробуйте еще раз.';
+          this.generalError = 'Произошла ошибка при смене пароля. Проверьте введенные данные и попробуйте еще раз.';
         }
       }
     });
   }
 
-  // Метод для очистки ошибок при вводе (как в регистрации)
+  // Метод для очистки ошибок при вводе
   clearErrors() {
     this.fieldsEmpty = false;
     this.passwordMismatch = false;

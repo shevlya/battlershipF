@@ -13,7 +13,7 @@ export interface GameStats {
   providedIn: 'root'
 })
 export class GameStatsService {
-  private readonly API_URL = 'http://localhost:8080/api';
+  private readonly API_URL = 'http://10.0.0.2:8080/api';
 
   constructor(private http: HttpClient) {}
 

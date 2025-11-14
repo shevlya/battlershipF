@@ -1,4 +1,3 @@
-// avatar.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -7,7 +6,7 @@ import { Observable, of } from 'rxjs';
   providedIn: 'root'
 })
 export class AvatarService {
-  private readonly API_URL = 'http://localhost:8080/api/players';
+  private readonly API_URL = 'http://10.0.0.2:8080/api/players';
 
   constructor(private http: HttpClient) {}
 
