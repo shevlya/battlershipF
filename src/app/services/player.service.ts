@@ -4,8 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Player {
-  player_id: number;
+  playerId: number;
   nickname: string;
+  avatarUrl: string | null;
 }
 
 @Injectable({
@@ -16,6 +17,7 @@ export class PlayerService {
 
   constructor(private http: HttpClient) {}
 
+  // Получить всех игроков
   getAllPlayers(): Observable<Player[]> {
     return this.http.get<Player[]>(`${this.API_URL}/all`);
   }
