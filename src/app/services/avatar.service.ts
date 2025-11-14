@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AvatarService {
-  private readonly API_URL = 'http://10.0.0.2:8080/api/players';
+  private readonly API_URL = `${environment.apiUrl}/api/players`;
 
   constructor(private http: HttpClient) {}
 

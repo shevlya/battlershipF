@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Player {
   player_id: number;
@@ -11,7 +12,7 @@ export interface Player {
   providedIn: 'root'
 })
 export class PlayerService {
-  private readonly API_URL = 'http://10.0.0.2:8080/api/players'; // ← Убедитесь, что здесь IP
+  private readonly API_URL = `${environment.apiUrl}/api/players`;
 
   constructor(private http: HttpClient) {}
 
