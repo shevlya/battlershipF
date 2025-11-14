@@ -1,4 +1,3 @@
-// profile-page.component.ts
 import { Component, OnInit } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -49,7 +48,7 @@ export class ProfilePageComponent implements OnInit {
     });
 
     // Загружаем актуальные данные пользователя с сервера
-    this.http.get<any>('http://localhost:8080/api/players/current', { headers }).subscribe({
+    this.http.get<any>('http://10.0.0.2:8080/api/players/current', { headers }).subscribe({
       next: (userData) => {
         console.log('Данные пользователя с сервера:', userData);
         

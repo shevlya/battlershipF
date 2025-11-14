@@ -1,15 +1,14 @@
-// auth.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { Router } from '@angular/router';
-import { catchError, tap } from 'rxjs/operators'; // Добавляем импорт tap
+import { catchError, tap } from 'rxjs/operators';
 
 // Интерфейс для пользователя
 export interface User {
   player_id: number;
   nickname: string;
-  avatarUrl: string | null; // Изменяем с avatar_url на avatarUrl
+  avatarUrl: string | null;
   totalGames?: number;
   wins?: number;
   losses?: number;
@@ -41,7 +40,7 @@ interface SignupRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:8080/api/auth';
+  private readonly API_URL = 'http://10.0.0.2:8080/api/auth';
   private readonly TOKEN_KEY = 'auth-token';
   private readonly USER_KEY = 'auth-user';
 
@@ -84,14 +83,13 @@ export class AuthService {
   }
 
   // Сохранение токена и данных пользователя
-
   setTokenAndUser(token: string, userData: JwtResponse): void {
     localStorage.setItem(this.TOKEN_KEY, token);
     
     const user: User = {
       player_id: userData.player_id,
       nickname: userData.nickname,
-      avatarUrl: userData.avatarUrl || null, // Используем avatarUrl
+      avatarUrl: userData.avatarUrl || null,
       totalGames: 0,
       wins: 0,
       losses: 0,
@@ -104,9 +102,60 @@ export class AuthService {
     console.log('Пользователь сохранен в localStorage:', user);
   }
 
-  // Получение токена
+  // Получение токена с проверкой срока действия (ЕДИНСТВЕННАЯ РЕАЛИЗАЦИЯ)
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    
+    if (!token) {
+      console.warn('🔍 AuthService: Токен не найден в localStorage');
+      return null;
+    }
+    
+    // Проверяем, не просрочен ли токен
+    try {
+      const payload = this.decodeToken(token);
+      const exp = payload.exp * 1000; // Convert to milliseconds
+      const now = Date.now();
+      
+      console.log('🔍 AuthService: Проверка токена:');
+      console.log('  - Истекает:', new Date(exp).toLocaleString());
+      console.log('  - Текущее время:', new Date(now).toLocaleString());
+      console.log('  - Просрочен:', now > exp);
+      
+      if (now > exp) {
+        console.error('❌ AuthService: Токен просрочен!');
+        this.logout();
+        return null;
+      }
+      
+      console.log('✅ AuthService: Токен валиден');
+      return token;
+    } catch (error) {
+      console.error('❌ AuthService: Ошибка декодирования токена:', error);
+      return null;
+    }
+  }
+
+  private decodeToken(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch (error) {
+      console.error('Ошибка при декодировании токена:', error);
+      throw error;
+    }
+  }
+
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+    
+    try {
+      const payload = this.decodeToken(token);
+      return Date.now() > payload.exp * 1000;
+    } catch (error) {
+      return true;
+    }
   }
 
   // Проверка, авторизован ли пользователь
@@ -115,7 +164,7 @@ export class AuthService {
   }
 
   private hasToken(): boolean {
-    return !!localStorage.getItem(this.TOKEN_KEY);
+    return !!this.getToken(); // Используем getToken, который теперь проверяет срок действия
   }
 
   // Получение данных пользователя из localStorage
@@ -142,7 +191,7 @@ export class AuthService {
 
   // Обновление аватара
   updateAvatar(avatarFileName: string): Observable<any> {
-    const url = `http://localhost:8080/api/players/avatar`;
+    const url = `http://10.0.0.2:8080/api/players/avatar`;
     
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -155,8 +204,12 @@ export class AuthService {
         
         // Обновляем данные пользователя
         this.updateUser({
-          avatarUrl: avatarFileName // Используем avatarUrl
+          avatarUrl: avatarFileName
         });
+      }),
+      catchError(error => {
+        console.error('Ошибка при обновлении аватара:', error);
+        return throwError(error);
       })
     );
   }
@@ -166,8 +219,9 @@ export class AuthService {
     return this.getCurrentUser();
   }
 
+  /*
   changePassword(oldPassword: string, newPassword: string): Observable<any> {
-    const url = `http://localhost:8080/api/auth/change-password`;
+    const url = `http://10.0.0.2:8080/api/auth/change-password`;
     
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -179,6 +233,42 @@ export class AuthService {
       newPassword
     };
 
-    return this.http.post(url, body, { headers });
+    return this.http.post(url, body, { headers }).pipe(
+      catchError(error => {
+        console.error('Ошибка при смене пароля:', error);
+        return throwError(error);
+      })
+    );
+  }
+    */
+
+
+  changePassword(oldPassword: string, newPassword: string): Observable<any> {
+    const url = `http://10.0.0.2:8080/api/auth/change-password`;
+    
+    const token = this.getToken();
+    console.log('🔑 Токен для запроса:', token ? 'присутствует' : 'отсутствует');
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    const body = {
+      oldPassword,
+      newPassword
+    };
+
+    console.log('🔑 Отправка запроса смены пароля:', { url, body });
+
+    return this.http.post(url, body, { headers }).pipe(
+      tap(response => console.log('✅ Пароль успешно изменен:', response)),
+      catchError(error => {
+        console.error('❌ Ошибка при смене пароля:', error);
+        console.log('🔍 Статус ошибки:', error.status);
+        console.log('🔍 Текст ошибки:', error.message);
+        return throwError(error);
+      })
+    );
   }
 }
