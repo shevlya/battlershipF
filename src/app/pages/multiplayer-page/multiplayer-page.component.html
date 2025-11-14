@@ -2,19 +2,52 @@
     <div class="multiplayer-card">
         <h2>Мультиплеерная игра</h2>
         
-        <div class="players-table">
+        <!-- Сообщение об ошибке -->
+        @if(error) {
+            <div class="error-message">
+                <div class="error-text">{{ error }}</div>
+            </div>
+        }
+
+        <!-- Индикатор загрузки -->
+        @if(loading && players.length === 0) {
+            <div class="loading-message">
+                <div class="loading-text">Загрузка игроков...</div>
+            </div>
+        }
+
+        <!-- Сообщение если нет игроков -->
+        @if(!loading && players.length === 0) {
+            <div class="empty-message">
+                <div class="empty-text">Нет доступных игроков</div>
+            </div>
+        }
+
+        <div class="players-table" *ngIf="players.length > 0">
             <div class="table-header">
-                <span>Игрок</span>
-                <span>Действие</span>
+                <span class="header-player">Игроки</span>
+                <span class="header-action">Действие</span>
             </div>
             
             <ul class="players-list">
                 <li class="player-row" *ngFor="let player of players">
                     <div class="player-info">
                         <div class="avatar-container">
-                            <img [src]="player.avatar" [alt]="player.username" class="avatar">
+                            <!-- Если есть аватар - показываем изображение -->
+                            @if(player.avatarUrl) {
+                                <img [src]="getAvatarPath(player.avatarUrl)" 
+                                     [alt]="player.nickname" 
+                                     class="avatar-image"
+                                     (error)="player.avatarUrl = null">
+                            }
+                            <!-- Если нет аватара - показываем цветной круг с инициалами -->
+                            @if(!player.avatarUrl) {
+                                <div class="avatar-placeholder" [style.background-color]="getAvatarColor(player.nickname)">
+                                    {{ getInitials(player.nickname) }}
+                                </div>
+                            }
                         </div>
-                        <span class="username">{{ player.username }}</span>
+                        <span class="username">{{ player.nickname }}</span>
                     </div>
                     <button class="invite-btn" (click)="invitePlayer(player)">
                         пригласить
@@ -22,8 +55,7 @@
                 </li>
             </ul>
         </div>
-
-        <button class="start-game-btn" (click)="startGame()">Начать игру</button>
+        
         <a routerLink="/lobby" class="btn-back">Вернуться в лобби</a>
     </div>
 </div>

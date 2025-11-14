@@ -33,12 +33,21 @@
 }
 
 .table-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
     padding: 0 15px 15px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
     font-weight: bold;
     font-size: 1.1em;
+}
+
+.header-player {
+    text-align: left;
+}
+
+.header-action {
+    text-align: right;
 }
 
 .players-list {
@@ -48,8 +57,9 @@
 }
 
 .player-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
     align-items: center;
     padding: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -72,12 +82,28 @@
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.avatar {
+.avatar-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2em;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .username {
@@ -101,12 +127,6 @@
     &:hover {
         background-color: rgba(220, 190, 255, 0.8);
         transform: scale(1.05);
-    }
-    
-    &:disabled {
-        background-color: rgba(131, 116, 154, 0.3);
-        cursor: not-allowed;
-        transform: none;
     }
 }
 
@@ -157,26 +177,83 @@
     }
 }
 
-.btn-info-corner {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background-color: rgba(220, 190, 255, 0.6);
+/* Стили для сообщений */
+.loading-message {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.loading-text {
     color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 8px;
     font-size: 1.1em;
-    font-weight: bold;
+}
+
+.empty-message {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.empty-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1em;
+}
+
+.error-message {
+    background-color: rgba(255, 100, 100, 0.7);
+    border: 2px solid rgba(255, 150, 150, 0.9);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    text-align: center;
     backdrop-filter: blur(4px);
-    display: inline-flex;
+    color: white;
+    font-weight: bold;
+}
+
+.error-text {
+    font-size: 0.95em;
+}
+
+.status-indicator {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    
+    &.online {
+        background-color: #4CAF50;
+        box-shadow: 0 0 8px #4CAF50;
+    }
+    
+    &.offline {
+        background-color: #f44336;
+    }
+}
+
+.status-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9em;
+}
+
+.invite-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
     
     &:hover {
-        background-color: rgba(220, 190, 255, 0.8);
-        transform: scale(1.03);
+        transform: none;
+        background-color: rgba(220, 190, 255, 0.6);
     }
 }
 
@@ -207,9 +284,8 @@
     
     .player-row {
         padding: 12px 10px;
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 10px;
-        align-items: stretch;
     }
     
     .player-info {
@@ -220,6 +296,10 @@
     .avatar-container {
         width: 40px;
         height: 40px;
+    }
+    
+    .avatar-placeholder {
+        font-size: 1em;
     }
     
     .username {
@@ -236,10 +316,5 @@
         max-width: 260px;
         padding: 12px 20px;
         font-size: 1.1em;
-    }
-    
-    .btn-info-corner {
-        padding: 8px 16px;
-        font-size: 1em;
     }
 }
