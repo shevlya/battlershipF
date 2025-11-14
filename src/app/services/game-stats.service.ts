@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface GameStats {
   totalGames: number;
@@ -13,7 +14,7 @@ export interface GameStats {
   providedIn: 'root'
 })
 export class GameStatsService {
-  private readonly API_URL = 'http://10.0.0.2:8080/api';
+  private readonly API_URL = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) {}
 

@@ -14,6 +14,9 @@ Package Manager: npm 10.1.0
 для игры по локальной сети в файле auth.service.ts поменяйте ip на свой (локальной сети). Запуск для игры с человеком    
 `ng serve --host 0.0.0.0 --port 4201`
 
+# На 15 ноября
+- создан environments.ts в папке environments, здесь меняем свой IP
+
 # На 14 ноября (обновление перед обедом-ужином)
 места где меняем на свой IP (по-человеческий будет сделано потом в одно месте опрос, в случае форсмажора проинформирую)   
 
@@ -21,23 +24,23 @@ Package Manager: npm 10.1.0
 
 тесты привела тебе в ЛС
 ## services
-### auth.service.ts
+### auth.service.ts +
 - меняем в 43 строчке
 - меняем в 194 строчке
 - меняем в 247 строчке
 !!! меняйте только часть до 8080, чтобы не съесть путь
 
-### avatar.service.ts
+### avatar.service.ts +
 - меняем в 9 строчке
 
-### game-status.service.ts
+### game-status.service.ts +
 - меняем в 16 строчке
 
-### player.service.ts 
+### player.service.ts +
 - меняем в 14 строчке
 
 ## pages
-### profile-page.component.ts
+### profile-page.component.ts +
 - меняем в 51 строчке
 
 ## interceptors

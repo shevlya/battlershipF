@@ -3,6 +3,7 @@ import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-profile-page',
@@ -48,7 +49,7 @@ export class ProfilePageComponent implements OnInit {
     });
 
     // Загружаем актуальные данные пользователя с сервера
-    this.http.get<any>('http://10.0.0.2:8080/api/players/current', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/players/current`, { headers }).subscribe({
       next: (userData) => {
         console.log('Данные пользователя с сервера:', userData);
         

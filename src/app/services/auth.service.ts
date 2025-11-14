@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { catchError, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 // Интерфейс для пользователя
 export interface User {
@@ -40,7 +41,7 @@ interface SignupRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://10.0.0.2:8080/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/api/auth`;
   private readonly TOKEN_KEY = 'auth-token';
   private readonly USER_KEY = 'auth-user';
 
@@ -191,7 +192,7 @@ export class AuthService {
 
   // Обновление аватара
   updateAvatar(avatarFileName: string): Observable<any> {
-    const url = `http://10.0.0.2:8080/api/players/avatar`;
+    const url = `${environment.apiUrl}/api/players/avatar`;
     
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -218,33 +219,10 @@ export class AuthService {
   getUser(): any {
     return this.getCurrentUser();
   }
-
-  /*
-  changePassword(oldPassword: string, newPassword: string): Observable<any> {
-    const url = `http://10.0.0.2:8080/api/auth/change-password`;
-    
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.getToken()}`
-    });
-
-    const body = {
-      oldPassword,
-      newPassword
-    };
-
-    return this.http.post(url, body, { headers }).pipe(
-      catchError(error => {
-        console.error('Ошибка при смене пароля:', error);
-        return throwError(error);
-      })
-    );
-  }
-    */
-
+  
 
   changePassword(oldPassword: string, newPassword: string): Observable<any> {
-    const url = `http://10.0.0.2:8080/api/auth/change-password`;
+    const url = `${environment.apiUrl}/api/auth/change-password`;
     
     const token = this.getToken();
     console.log('🔑 Токен для запроса:', token ? 'присутствует' : 'отсутствует');
