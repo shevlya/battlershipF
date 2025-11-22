@@ -1,43 +1,54 @@
 <div class="container">
-  <header>
-    <h1>Морской бой</h1>
-    <p class="subtitle">Расстановка кораблей</p>
-  </header>
-
   <div class="game-setup">
     <div class="setup-options">
-      <h2>Способ расстановки</h2>
+      <div class="setup-header">
+        <h2>Способ расстановки</h2>
+        <button class="instruction-trigger" id="instructionTrigger">
+          <span>?</span>
+          Инструкция
+        </button>
+      </div>
 
       <div class="strategy-options">
         <div class="strategy-option active" data-strategy="manual">
           <input type="radio" id="manual" name="strategy" checked>
-          <label for="manual">Ручная расстановка</label>
+          <label for="manual">
+            Ручная расстановка
+            <div class="tooltip-icon" data-tooltip="Разместите корабли самостоятельно на игровом поле">?</div>
+          </label>
         </div>
-        <p class="strategy-info">Разместите корабли самостоятельно на игровом поле</p>
 
         <div class="strategy-option" data-strategy="random">
           <input type="radio" id="random" name="strategy">
-          <label for="random">Случайная расстановка</label>
+          <label for="random">
+            Случайная расстановка
+            <div class="tooltip-icon" data-tooltip="Корабли будут размещены случайным образом">?</div>
+          </label>
         </div>
-        <p class="strategy-info">Корабли будут размещены случайным образом</p>
 
         <div class="strategy-option" data-strategy="coastal">
           <input type="radio" id="coastal" name="strategy">
-          <label for="coastal">Береговая стратегия</label>
+          <label for="coastal">
+            Береговая стратегия
+            <div class="tooltip-icon" data-tooltip="Корабли размещаются вдоль границ поля">?</div>
+          </label>
         </div>
-        <p class="strategy-info">Корабли размещаются вдоль границ поля</p>
 
         <div class="strategy-option" data-strategy="diagonal">
           <input type="radio" id="diagonal" name="strategy">
-          <label for="diagonal">Диагональная стратегия</label>
+          <label for="diagonal">
+            Диагональная стратегия
+            <div class="tooltip-icon" data-tooltip="Корабли избегают главных диагоналей поля">?</div>
+          </label>
         </div>
-        <p class="strategy-info">Корабли избегают главных диагоналей поля</p>
 
         <div class="strategy-option" data-strategy="half-field">
           <input type="radio" id="half-field" name="strategy">
-          <label for="half-field">Полупольная стратегия</label>
+          <label for="half-field">
+            Полупольная стратегия
+            <div class="tooltip-icon" data-tooltip="Корабли концентрируются в одной половине поля">?</div>
+          </label>
         </div>
-        <p class="strategy-info">Корабли концентрируются в одной половине поля</p>
       </div>
 
       <div class="ship-selection">
@@ -120,15 +131,44 @@
       </div>
     </div>
   </div>
+</div>
 
-  <div class="instructions">
+<!-- Попап с инструкцией -->
+<div class="instruction-popup" id="instructionPopup">
+  <div class="popup-overlay" id="popupOverlay"></div>
+  <div class="popup-content">
+    <button class="popup-close" id="popupClose">&times;</button>
     <h3>Инструкция по расстановке</h3>
-    <ul>
-      <li>Выберите корабль из списка и ориентацию (горизонтальную или вертикальную)</li>
-      <li>Кликните на поле, чтобы разместить корабль</li>
-      <li>Корабли не могут соприкасаться друг с другом (даже по диагонали)</li>
-      <li>Используйте кнопку "Авторасстановка" для автоматического размещения всех кораблей</li>
-      <li>Нажмите "Начать игру", когда все корабли будут расставлены</li>
-    </ul>
+    <div class="instruction-content">
+      <ul>
+        <li>
+          <strong>Выбор корабля и ориентации:</strong>
+          <span>Выберите корабль из списка и ориентацию (горизонтальную или вертикальную)</span>
+        </li>
+        <li>
+          <strong>Размещение кораблей:</strong>
+          <span>Кликните на поле, чтобы разместить корабль. Перетащите для удобного размещения</span>
+        </li>
+        <li>
+          <strong>Правила размещения:</strong>
+          <span>Корабли не могут соприкасаться друг с другом (даже по диагонали)</span>
+        </li>
+        <li>
+          <strong>Автоматическая расстановка:</strong>
+          <span>Используйте кнопку "Авторасстановка" для автоматического размещения всех кораблей</span>
+        </li>
+        <li>
+          <strong>Начало игры:</strong>
+          <span>Нажмите "Начать игру", когда все корабли будут расставлены правильно</span>
+        </li>
+        <li>
+          <strong>Стратегии:</strong>
+          <span>Выберите одну из стратегий расстановки для автоматического размещения</span>
+        </li>
+      </ul>
+    </div>
+    <div class="popup-actions">
+      <button class="btn btn-primary" id="popupUnderstand">Понятно</button>
+    </div>
   </div>
 </div>

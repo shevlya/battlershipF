@@ -28,7 +28,7 @@ interface GameState {
   placedShips: { [key: number]: number };
 }
 
-//Константы
+// Константы
 const BOARD_SIZE = 10;
 const SHIP_TYPES: ShipType[] = [
   { size: 4, count: 1, name: "Линкор" },
@@ -44,8 +44,7 @@ const SHIP_TYPES: ShipType[] = [
   templateUrl: './placement-page.component.html',
   styleUrl: './placement-page.component.scss'
 })
-
-export class PlacementPageComponent {
+export class PlacementPageComponent implements OnInit {
   // Глобальное состояние игры
   gameState: GameState = {
     playerBoard: Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0)),
@@ -56,9 +55,15 @@ export class PlacementPageComponent {
     placedShips: { 4: 0, 3: 0, 2: 0, 1: 0 }
   };
 
-  /*
+  ngOnInit() {
+    this.initInstructionPopup();
+    this.initTooltips();
+    this.initializeBoard();
+    this.initializeUI();
+  }
+
   // Инициализация игрового поля
-  function initializeBoard(): void {
+  initializeBoard(): void {
     const boardElement = document.getElementById('playerBoard');
     if (!boardElement) return;
 
@@ -66,6 +71,7 @@ export class PlacementPageComponent {
 
     // Добавляем буквенные координаты (A-J)
     const letters = ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    
     for (let i = 0; i <= BOARD_SIZE; i++) {
       for (let j = 0; j <= BOARD_SIZE; j++) {
         const cell = document.createElement('div');
@@ -85,52 +91,54 @@ export class PlacementPageComponent {
         } else {
           // Игровые клетки
           cell.classList.add('water');
-          cell.dataset.row = (i - 1).toString();
-          cell.dataset.col = (j - 1).toString();
+          cell.dataset['row'] = (i - 1).toString();
+          cell.dataset['col'] = (j - 1).toString();
 
-          // Обработчик клика для ручного размещения
-          cell.addEventListener('click', handleCellClick);
-          cell.addEventListener('mouseover', handleCellHover);
-          cell.addEventListener('mouseout', handleCellHoverOut);
+          // Обработчики событий
+          cell.addEventListener('click', (event) => this.handleCellClick(event));
+          cell.addEventListener('mouseover', (event) => this.handleCellHover(event));
+          cell.addEventListener('mouseout', (event) => this.handleCellHoverOut(event));
         }
 
         boardElement.appendChild(cell);
       }
     }
-
-    updateShipCounters();
   }
 
   // Обработка клика по клетке
-  function handleCellClick(event: Event): void {
-    if (gameState.placementStrategy !== 'manual') return;
+  handleCellClick(event: Event): void {
+    if (this.gameState.placementStrategy !== 'manual') return;
 
     const target = event.target as HTMLElement;
-    const row = parseInt(target.dataset.row || '');
-    const col = parseInt(target.dataset.col || '');
+    const row = parseInt(target.dataset['row'] || '');
+    const col = parseInt(target.dataset['col'] || '');
 
     if (isNaN(row) || isNaN(col)) return;
 
-    if (canPlaceShip(row, col, gameState.selectedShipSize, gameState.orientation)) {
-      placeShip(row, col, gameState.selectedShipSize, gameState.orientation);
-      updateShipCounters();
-      checkGameReady();
+    if (this.canPlaceShip(row, col, this.gameState.selectedShipSize, this.gameState.orientation)) {
+      this.placeShip(row, col, this.gameState.selectedShipSize, this.gameState.orientation);
+      this.updateShipCounters();
+      this.checkGameReady();
     }
   }
 
   // Обработка наведения на клетку
-  function handleCellHover(event: Event): void {
-    if (gameState.placementStrategy !== 'manual') return;
+  handleCellHover(event: Event): void {
+    if (this.gameState.placementStrategy !== 'manual') return;
 
     const target = event.target as HTMLElement;
-    const row = parseInt(target.dataset.row || '');
-    const col = parseInt(target.dataset.col || '');
+    const row = parseInt(target.dataset['row'] || '');
+    const col = parseInt(target.dataset['col'] || '');
 
     if (isNaN(row) || isNaN(col)) return;
 
-    const cells = getShipCells(row, col, gameState.selectedShipSize, gameState.orientation);
-    const isValid = canPlaceShip(row, col, gameState.selectedShipSize, gameState.orientation);
+    const cells = this.getShipCells(row, col, this.gameState.selectedShipSize, this.gameState.orientation);
+    const isValid = this.canPlaceShip(row, col, this.gameState.selectedShipSize, this.gameState.orientation);
 
+    // Убираем предыдущий hover эффект
+    this.clearHoverEffect();
+
+    // Применяем новый hover эффект
     cells.forEach(cellPos => {
       const cell = document.querySelector(`.cell[data-row="${cellPos.row}"][data-col="${cellPos.col}"]`) as HTMLElement;
       if (cell) {
@@ -144,38 +152,37 @@ export class PlacementPageComponent {
   }
 
   // Обработка ухода курсора с клетки
-  function handleCellHoverOut(event: Event): void {
-    const target = event.target as HTMLElement;
-    const row = parseInt(target.dataset.row || '');
-    const col = parseInt(target.dataset.col || '');
+  handleCellHoverOut(event: Event): void {
+    this.clearHoverEffect();
+  }
 
-    if (isNaN(row) || isNaN(col)) return;
-
-    const cells = getShipCells(row, col, gameState.selectedShipSize, gameState.orientation);
-
-    cells.forEach(cellPos => {
-      const cell = document.querySelector(`.cell[data-row="${cellPos.row}"][data-col="${cellPos.col}"]`) as HTMLElement;
-      if (cell) {
-        cell.classList.remove('ship-hover', 'invalid');
-      }
+  // Очистка hover эффекта
+  private clearHoverEffect(): void {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+      cell.classList.remove('ship-hover', 'invalid');
     });
   }
 
   // Получить все клетки, занимаемые кораблем
-  function getShipCells(row: number, col: number, size: number, orientation: string): CellPosition[] {
+  getShipCells(row: number, col: number, size: number, orientation: string): CellPosition[] {
     const cells: CellPosition[] = [];
     for (let i = 0; i < size; i++) {
       if (orientation === 'horizontal') {
-        cells.push({ row: row, col: col + i });
+        if (col + i < BOARD_SIZE) {
+          cells.push({ row: row, col: col + i });
+        }
       } else {
-        cells.push({ row: row + i, col: col });
+        if (row + i < BOARD_SIZE) {
+          cells.push({ row: row + i, col: col });
+        }
       }
     }
     return cells;
   }
 
   // Проверить возможность размещения корабля
-  function canPlaceShip(row: number, col: number, size: number, orientation: string): boolean {
+  canPlaceShip(row: number, col: number, size: number, orientation: string): boolean {
     // Проверка выхода за границы поля
     if (orientation === 'horizontal') {
       if (col + size > BOARD_SIZE) return false;
@@ -184,16 +191,16 @@ export class PlacementPageComponent {
     }
 
     // Проверка доступности клеток и соседних клеток
-    const cells = getShipCells(row, col, size, orientation);
+    const cells = this.getShipCells(row, col, size, orientation);
     for (const cell of cells) {
       // Проверка самой клетки
-      if (gameState.playerBoard[cell.row][cell.col] !== 0) return false;
+      if (this.gameState.playerBoard[cell.row][cell.col] !== 0) return false;
 
       // Проверка соседних клеток (включая диагонали)
       for (let r = cell.row - 1; r <= cell.row + 1; r++) {
         for (let c = cell.col - 1; c <= cell.col + 1; c++) {
           if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
-            if (gameState.playerBoard[r][c] !== 0) return false;
+            if (this.gameState.playerBoard[r][c] !== 0) return false;
           }
         }
       }
@@ -201,7 +208,7 @@ export class PlacementPageComponent {
 
     // Проверка лимита кораблей данного типа
     const shipType = SHIP_TYPES.find(ship => ship.size === size);
-    if (!shipType || gameState.placedShips[size] >= shipType.count) {
+    if (!shipType || this.gameState.placedShips[size] >= shipType.count) {
       return false;
     }
 
@@ -209,59 +216,70 @@ export class PlacementPageComponent {
   }
 
   // Разместить корабль на поле
-  function placeShip(row: number, col: number, size: number, orientation: string): void {
-    const shipId = gameState.ships.length + 1;
-    const cells = getShipCells(row, col, size, orientation);
+  placeShip(row: number, col: number, size: number, orientation: string): void {
+    const shipId = this.gameState.ships.length + 1;
+    const cells = this.getShipCells(row, col, size, orientation);
 
     // Обновление состояния игры
     cells.forEach(cell => {
-      gameState.playerBoard[cell.row][cell.col] = shipId;
+      this.gameState.playerBoard[cell.row][cell.col] = shipId;
     });
 
-    gameState.ships.push({
+    this.gameState.ships.push({
       id: shipId,
       size: size,
       cells: cells,
       orientation: orientation as 'horizontal' | 'vertical'
     });
 
-    gameState.placedShips[size]++;
+    this.gameState.placedShips[size]++;
 
     // Визуальное отображение корабля
+    this.renderBoard();
+  }
+
+  // Визуализация игрового поля
+  renderBoard(): void {
+    const cells = document.querySelectorAll('.cell[data-row][data-col]');
+
     cells.forEach(cell => {
-      const cellElement = document.querySelector(`.cell[data-row="${cell.row}"][data-col="${cell.col}"]`) as HTMLElement;
-      if (cellElement) {
-        cellElement.classList.add('ship');
-        cellElement.classList.remove('water', 'ship-hover', 'invalid');
+      const row = parseInt((cell as HTMLElement).dataset['row'] || '');
+      const col = parseInt((cell as HTMLElement).dataset['col'] || '');
+
+      cell.className = 'cell water';
+
+      if (this.gameState.playerBoard[row][col] !== 0) {
+        cell.classList.add('ship');
+        cell.classList.remove('water');
       }
     });
   }
 
   // Обновить счетчики кораблей
-  function updateShipCounters(): void {
+  updateShipCounters(): void {
     const battleshipCount = document.getElementById('battleshipCount');
     const cruiserCount = document.getElementById('cruiserCount');
     const destroyerCount = document.getElementById('destroyerCount');
     const boatCount = document.getElementById('boatCount');
 
     if (battleshipCount) {
-      battleshipCount.textContent = (SHIP_TYPES[0].count - gameState.placedShips[4]).toString();
+      battleshipCount.textContent = (SHIP_TYPES[0].count - this.gameState.placedShips[4]).toString();
     }
     if (cruiserCount) {
-      cruiserCount.textContent = (SHIP_TYPES[1].count - gameState.placedShips[3]).toString();
+      cruiserCount.textContent = (SHIP_TYPES[1].count - this.gameState.placedShips[3]).toString();
     }
     if (destroyerCount) {
-      destroyerCount.textContent = (SHIP_TYPES[2].count - gameState.placedShips[2]).toString();
+      destroyerCount.textContent = (SHIP_TYPES[2].count - this.gameState.placedShips[2]).toString();
     }
     if (boatCount) {
-      boatCount.textContent = (SHIP_TYPES[3].count - gameState.placedShips[1]).toString();
+      boatCount.textContent = (SHIP_TYPES[3].count - this.gameState.placedShips[1]).toString();
     }
   }
 
   // Проверить готовность к игре
-  function checkGameReady(): void {
+  checkGameReady(): void {
     const allShipsPlaced = SHIP_TYPES.every(ship =>
-      gameState.placedShips[ship.size] === ship.count
+      this.gameState.placedShips[ship.size] === ship.count
     );
 
     const startGameBtn = document.getElementById('startGameBtn') as HTMLButtonElement;
@@ -270,258 +288,8 @@ export class PlacementPageComponent {
     }
   }
 
-  // Автоматическая расстановка кораблей
-  function autoPlaceShips(strategy: string): void {
-    // Очистка текущего поля
-    clearBoard();
-
-    // В зависимости от стратегии используем разные алгоритмы
-    switch(strategy) {
-      case 'random':
-        placeShipsRandomly();
-        break;
-      case 'coastal':
-        placeShipsCoastal();
-        break;
-      case 'diagonal':
-        placeShipsDiagonal();
-        break;
-      case 'half-field':
-        placeShipsHalfField();
-        break;
-      default:
-        placeShipsRandomly();
-    }
-
-    updateShipCounters();
-    checkGameReady();
-    renderBoard();
-  }
-
-  // Случайная расстановка кораблей
-  function placeShipsRandomly(): void {
-    const shipTypes = [...SHIP_TYPES];
-
-    // Размещаем корабли от самых больших к самым маленьким
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          const row = Math.floor(Math.random() * BOARD_SIZE);
-          const col = Math.floor(Math.random() * BOARD_SIZE);
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-
-          if (canPlaceShip(row, col, shipType.size, orientation)) {
-            placeShip(row, col, shipType.size, orientation);
-            placed = true;
-          }
-
-          attempts++;
-        }
-
-        if (!placed) {
-          console.error(`Не удалось разместить корабль размером ${shipType.size}`);
-        }
-      }
-    }
-  }
-
-  // Береговая стратегия (корабли вдоль границ)
-  function placeShipsCoastal(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          // Предпочтение отдаем граничным клеткам
-          const isBorder = Math.random() > 0.3;
-          let row = 0, col = 0;
-
-          if (isBorder) {
-            // Выбираем граничную клетку
-            const side = Math.floor(Math.random() * 4); // 0: верх, 1: право, 2: низ, 3: лево
-            switch(side) {
-              case 0: // Верх
-                row = 0;
-                col = Math.floor(Math.random() * BOARD_SIZE);
-                break;
-              case 1: // Право
-                row = Math.floor(Math.random() * BOARD_SIZE);
-                col = BOARD_SIZE - 1;
-                break;
-              case 2: // Низ
-                row = BOARD_SIZE - 1;
-                col = Math.floor(Math.random() * BOARD_SIZE);
-                break;
-              case 3: // Лево
-                row = Math.floor(Math.random() * BOARD_SIZE);
-                col = 0;
-                break;
-            }
-          } else {
-            // Иногда размещаем и в центре
-            row = Math.floor(Math.random() * BOARD_SIZE);
-            col = Math.floor(Math.random() * BOARD_SIZE);
-          }
-
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-
-          if (canPlaceShip(row, col, shipType.size, orientation)) {
-            placeShip(row, col, shipType.size, orientation);
-            placed = true;
-          }
-
-          attempts++;
-        }
-
-        if (!placed) {
-          // Если не удалось разместить по стратегии, пробуем случайно
-          placeShipRandomly(shipType.size);
-        }
-      }
-    }
-  }
-
-  // Диагональная стратегия (избегание диагоналей)
-  function placeShipsDiagonal(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          const row = Math.floor(Math.random() * BOARD_SIZE);
-          const col = Math.floor(Math.random() * BOARD_SIZE);
-
-          // Избегаем главных диагоналей
-          if (row === col || row + col === BOARD_SIZE - 1) {
-            attempts++;
-            continue;
-          }
-
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-
-          if (canPlaceShip(row, col, shipType.size, orientation)) {
-            placeShip(row, col, shipType.size, orientation);
-            placed = true;
-          }
-
-          attempts++;
-        }
-
-        if (!placed) {
-          placeShipRandomly(shipType.size);
-        }
-      }
-    }
-  }
-
-  // Полупольная стратегия (концентрация в одной половине)
-  function placeShipsHalfField(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    // Выбираем случайную половину (левая/правая или верхняя/нижняя)
-    const half = Math.random() > 0.5 ? 'left' : 'right';
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          let row = 0, col = 0;
-
-          if (half === 'left') {
-            // Левая половина поля
-            row = Math.floor(Math.random() * BOARD_SIZE);
-            col = Math.floor(Math.random() * (BOARD_SIZE / 2));
-          } else {
-            // Правая половина поля
-            row = Math.floor(Math.random() * BOARD_SIZE);
-            col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + (BOARD_SIZE / 2);
-          }
-
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-
-          if (canPlaceShip(row, col, shipType.size, orientation)) {
-            placeShip(row, col, shipType.size, orientation);
-            placed = true;
-          }
-
-          attempts++;
-        }
-
-        if (!placed) {
-          placeShipRandomly(shipType.size);
-        }
-      }
-    }
-  }
-
-  // Размещение одного корабля случайным образом (запасной вариант)
-  function placeShipRandomly(size: number): void {
-    let placed = false;
-    let attempts = 0;
-
-    while (!placed && attempts < 1000) {
-      const row = Math.floor(Math.random() * BOARD_SIZE);
-      const col = Math.floor(Math.random() * BOARD_SIZE);
-      const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-
-      if (canPlaceShip(row, col, size, orientation)) {
-        placeShip(row, col, size, orientation);
-        placed = true;
-      }
-
-      attempts++;
-    }
-  }
-
-  // Очистка игрового поля
-  function clearBoard(): void {
-    gameState.playerBoard = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
-    gameState.ships = [];
-    gameState.placedShips = { 4: 0, 3: 0, 2: 0, 1: 0 };
-
-    const startGameBtn = document.getElementById('startGameBtn') as HTMLButtonElement;
-    if (startGameBtn) {
-      startGameBtn.disabled = true;
-    }
-
-    renderBoard();
-  }
-
-  // Визуализация игрового поля
-  function renderBoard(): void {
-    const cells = document.querySelectorAll('.cell[data-row][data-col]');
-
-    cells.forEach(cell => {
-      const row = parseInt((cell as HTMLElement).dataset.row || '');
-      const col = parseInt((cell as HTMLElement).dataset.col || '');
-
-      cell.className = 'cell water';
-
-      if (gameState.playerBoard[row][col] !== 0) {
-        cell.classList.add('ship');
-        cell.classList.remove('water');
-      }
-    });
-  }
-
-  // Инициализация интерфейса
-  function initializeUI(): void {
+  // Инициализация UI
+  initializeUI(): void {
     // Обработчики для выбора стратегии
     document.querySelectorAll('.strategy-option').forEach(option => {
       option.addEventListener('click', () => {
@@ -530,8 +298,8 @@ export class PlacementPageComponent {
         });
         option.classList.add('active');
 
-        const strategy = (option as HTMLElement).dataset.strategy || 'manual';
-        gameState.placementStrategy = strategy;
+        const strategy = (option as HTMLElement).dataset['strategy'] || 'manual';
+        this.gameState.placementStrategy = strategy;
 
         // Если выбрана не ручная стратегия, показываем кнопку авторасстановки
         const autoPlaceBtn = document.getElementById('autoPlaceBtn') as HTMLButtonElement;
@@ -549,7 +317,7 @@ export class PlacementPageComponent {
         });
         item.classList.add('active');
 
-        gameState.selectedShipSize = parseInt((item as HTMLElement).dataset.size || '4');
+        this.gameState.selectedShipSize = parseInt((item as HTMLElement).dataset['size'] || '4');
       });
     });
 
@@ -561,7 +329,7 @@ export class PlacementPageComponent {
         });
         btn.classList.add('active');
 
-        gameState.orientation = (btn as HTMLElement).dataset.orientation as 'horizontal' | 'vertical';
+        this.gameState.orientation = (btn as HTMLElement).dataset['orientation'] as 'horizontal' | 'vertical';
       });
     });
 
@@ -569,15 +337,15 @@ export class PlacementPageComponent {
     const autoPlaceBtn = document.getElementById('autoPlaceBtn');
     if (autoPlaceBtn) {
       autoPlaceBtn.addEventListener('click', () => {
-        autoPlaceShips(gameState.placementStrategy);
+        this.autoPlaceShips();
       });
     }
 
     const clearBtn = document.getElementById('clearBtn');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
-        clearBoard();
-        updateShipCounters();
+        this.clearBoard();
+        this.updateShipCounters();
       });
     }
 
@@ -590,11 +358,237 @@ export class PlacementPageComponent {
     }
   }
 
-  // Запуск приложения
-  document.addEventListener('DOMContentLoaded', () => {
-    initializeBoard();
-    initializeUI();
-  });
+  // Автоматическая расстановка кораблей
+  autoPlaceShips(): void {
+    if (this.gameState.placementStrategy === 'manual') return;
 
-  */
+    // Очистка текущего поля
+    this.clearBoard();
+
+    // В зависимости от стратегии используем разные алгоритмы
+    switch(this.gameState.placementStrategy) {
+      case 'random':
+        this.placeShipsRandomly();
+        break;
+      case 'coastal':
+        this.placeShipsCoastal();
+        break;
+      case 'diagonal':
+        this.placeShipsDiagonal();
+        break;
+      case 'half-field':
+        this.placeShipsHalfField();
+        break;
+      default:
+        this.placeShipsRandomly();
+    }
+
+    this.updateShipCounters();
+    this.checkGameReady();
+    this.renderBoard();
+  }
+
+  // Случайная расстановка кораблей
+  private placeShipsRandomly(): void {
+    const shipTypes = [...SHIP_TYPES];
+    shipTypes.sort((a, b) => b.size - a.size);
+
+    for (const shipType of shipTypes) {
+      for (let i = 0; i < shipType.count; i++) {
+        this.placeShipRandomly(shipType.size);
+      }
+    }
+  }
+
+  // Береговая стратегия
+  private placeShipsCoastal(): void {
+    const shipTypes = [...SHIP_TYPES];
+    shipTypes.sort((a, b) => b.size - a.size);
+
+    for (const shipType of shipTypes) {
+      for (let i = 0; i < shipType.count; i++) {
+        let placed = false;
+        let attempts = 0;
+
+        while (!placed && attempts < 1000) {
+          const isBorder = Math.random() > 0.3;
+          let row = 0, col = 0;
+
+          if (isBorder) {
+            const side = Math.floor(Math.random() * 4);
+            switch(side) {
+              case 0: row = 0; col = Math.floor(Math.random() * BOARD_SIZE); break;
+              case 1: row = Math.floor(Math.random() * BOARD_SIZE); col = BOARD_SIZE - 1; break;
+              case 2: row = BOARD_SIZE - 1; col = Math.floor(Math.random() * BOARD_SIZE); break;
+              case 3: row = Math.floor(Math.random() * BOARD_SIZE); col = 0; break;
+            }
+          } else {
+            row = Math.floor(Math.random() * BOARD_SIZE);
+            col = Math.floor(Math.random() * BOARD_SIZE);
+          }
+
+          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+
+          if (this.canPlaceShip(row, col, shipType.size, orientation)) {
+            this.placeShip(row, col, shipType.size, orientation);
+            placed = true;
+          }
+          attempts++;
+        }
+
+        if (!placed) {
+          this.placeShipRandomly(shipType.size);
+        }
+      }
+    }
+  }
+
+  // Диагональная стратегия
+  private placeShipsDiagonal(): void {
+    const shipTypes = [...SHIP_TYPES];
+    shipTypes.sort((a, b) => b.size - a.size);
+
+    for (const shipType of shipTypes) {
+      for (let i = 0; i < shipType.count; i++) {
+        let placed = false;
+        let attempts = 0;
+
+        while (!placed && attempts < 1000) {
+          const row = Math.floor(Math.random() * BOARD_SIZE);
+          const col = Math.floor(Math.random() * BOARD_SIZE);
+
+          if (row === col || row + col === BOARD_SIZE - 1) {
+            attempts++;
+            continue;
+          }
+
+          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+
+          if (this.canPlaceShip(row, col, shipType.size, orientation)) {
+            this.placeShip(row, col, shipType.size, orientation);
+            placed = true;
+          }
+          attempts++;
+        }
+
+        if (!placed) {
+          this.placeShipRandomly(shipType.size);
+        }
+      }
+    }
+  }
+
+  // Полупольная стратегия
+  private placeShipsHalfField(): void {
+    const shipTypes = [...SHIP_TYPES];
+    shipTypes.sort((a, b) => b.size - a.size);
+
+    const half = Math.random() > 0.5 ? 'left' : 'right';
+
+    for (const shipType of shipTypes) {
+      for (let i = 0; i < shipType.count; i++) {
+        let placed = false;
+        let attempts = 0;
+
+        while (!placed && attempts < 1000) {
+          let row = 0, col = 0;
+
+          if (half === 'left') {
+            row = Math.floor(Math.random() * BOARD_SIZE);
+            col = Math.floor(Math.random() * (BOARD_SIZE / 2));
+          } else {
+            row = Math.floor(Math.random() * BOARD_SIZE);
+            col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + Math.floor(BOARD_SIZE / 2);
+          }
+
+          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+
+          if (this.canPlaceShip(row, col, shipType.size, orientation)) {
+            this.placeShip(row, col, shipType.size, orientation);
+            placed = true;
+          }
+          attempts++;
+        }
+
+        if (!placed) {
+          this.placeShipRandomly(shipType.size);
+        }
+      }
+    }
+  }
+
+  // Размещение одного корабля случайным образом
+  private placeShipRandomly(size: number): void {
+    let placed = false;
+    let attempts = 0;
+
+    while (!placed && attempts < 1000) {
+      const row = Math.floor(Math.random() * BOARD_SIZE);
+      const col = Math.floor(Math.random() * BOARD_SIZE);
+      const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+
+      if (this.canPlaceShip(row, col, size, orientation)) {
+        this.placeShip(row, col, size, orientation);
+        placed = true;
+      }
+      attempts++;
+    }
+  }
+
+  // Очистка игрового поля
+  clearBoard(): void {
+    this.gameState.playerBoard = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
+    this.gameState.ships = [];
+    this.gameState.placedShips = { 4: 0, 3: 0, 2: 0, 1: 0 };
+
+    const startGameBtn = document.getElementById('startGameBtn') as HTMLButtonElement;
+    if (startGameBtn) {
+      startGameBtn.disabled = true;
+    }
+
+    this.renderBoard();
+  }
+
+  // Для попапа с инфой
+  initInstructionPopup() {
+    const instructionTrigger = document.getElementById('instructionTrigger');
+    const instructionPopup = document.getElementById('instructionPopup');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const popupClose = document.getElementById('popupClose');
+    const popupUnderstand = document.getElementById('popupUnderstand');
+
+    const openPopup = () => {
+      instructionPopup?.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closePopup = () => {
+      instructionPopup?.classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    instructionTrigger?.addEventListener('click', openPopup);
+    popupOverlay?.addEventListener('click', closePopup);
+    popupClose?.addEventListener('click', closePopup);
+    popupUnderstand?.addEventListener('click', closePopup);
+
+    // Закрытие по ESC
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && instructionPopup?.classList.contains('active')) {
+        closePopup();
+      }
+    });
+  }
+
+  // Для инициализации тултипов
+  initTooltips() {
+    // Тултипы работают через CSS, но можно добавить дополнительную логику если нужно
+    const tooltipIcons = document.querySelectorAll('.tooltip-icon');
+    tooltipIcons.forEach(icon => {
+      // Добавляем обработчики для дополнительной функциональности
+      icon.addEventListener('click', (event) => {
+        event.stopPropagation(); // Предотвращаем всплытие события
+      });
+    });
+  }
 }
