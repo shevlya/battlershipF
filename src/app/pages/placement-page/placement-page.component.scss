@@ -213,7 +213,7 @@ $cell-size-mobile: 30px;
   }
 }
 
-// Улучшенные тултипы с позиционированием поверх всего
+// Улучшенные значки вопроса с позиционированием поверх всего
 .tooltip-icon[data-tooltip] {
   position: relative;
 
@@ -600,12 +600,10 @@ $cell-size-mobile: 30px;
 @media (max-width: 768px) {
   .container {
     padding: 15px;
-    // Убрали overflow-y: auto чтобы убрать скролл
   }
 
   .game-setup {
     flex-direction: column;
-    // Убрали max-height: none
   }
 
   .setup-options, .game-board {
@@ -655,7 +653,7 @@ $cell-size-mobile: 30px;
     margin-bottom: 15px;
   }
 
-  // Адаптивность для тултипов на мобильных
+  // Адаптивность для значки вопроса на мобильных
   .tooltip-icon[data-tooltip]::before {
     width: 180px;
     font-size: 0.8rem;
@@ -698,7 +696,7 @@ $cell-size-mobile: 30px;
     justify-content: center;
   }
 
-  // Адаптивность для тултипов на маленьких экранах
+  // Адаптивность для значки вопроса на маленьких экранах
   .tooltip-icon[data-tooltip]::before {
     width: 160px;
     left: 50%;
@@ -731,7 +729,7 @@ $cell-size-mobile: 30px;
     font-size: 0.8rem;
   }
 
-  // Адаптивность для тултипов на очень маленьких экранах
+  // Адаптивность для значки вопроса на очень маленьких экранах
   .tooltip-icon[data-tooltip]::before {
     width: 140px;
     font-size: 0.75rem;

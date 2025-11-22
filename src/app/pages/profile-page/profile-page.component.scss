@@ -107,6 +107,7 @@
     display: flex;
     gap: 25px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .btn-action {
@@ -124,6 +125,16 @@
     &:hover {
         background-color: rgba(255, 255, 255, 0.5);
         transform: translateY(-2px);
+    }
+}
+
+.btn-logout {
+    background-color: rgba(255, 100, 100, 0.6);
+    border-color: rgba(255, 150, 150, 0.8);
+
+    &:hover {
+        background-color: rgba(255, 100, 100, 0.8);
+        border-color: rgba(255, 200, 200, 0.9);
     }
 }
 
