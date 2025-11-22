@@ -25,33 +25,33 @@
 
         <div class="players-table" *ngIf="players.length > 0">
             <div class="table-header">
-                <span class="header-player">Игроки</span>
-                <span class="header-action">Действие</span>
+                <span class="header-player">Выберите игрока</span>
             </div>
             
             <ul class="players-list">
                 <li class="player-row" *ngFor="let player of paginatedPlayers">
-                    <div class="player-info">
-                        <div class="avatar-container">
-                            <!-- Если есть аватар - показываем изображение -->
-                            @if(player.avatarUrl) {
-                                <img [src]="getAvatarPath(player.avatarUrl)" 
-                                     [alt]="player.nickname" 
-                                     class="avatar-image"
-                                     (error)="player.avatarUrl = null">
-                            }
-                            <!-- Если нет аватара - показываем цветной круг с инициалами -->
-                            @if(!player.avatarUrl) {
-                                <div class="avatar-placeholder" [style.background-color]="getAvatarColor(player.nickname)">
-                                    {{ getInitials(player.nickname) }}
-                                </div>
-                            }
+                    <div class="player-option" 
+                         [class.selected]="selectedPlayerId === player.playerId"
+                         (click)="selectPlayer(player.playerId)">
+                        <div class="player-info">
+                            <div class="avatar-container">
+                                <!-- Если есть аватар - показываем изображение -->
+                                @if(player.avatarUrl) {
+                                    <img [src]="getAvatarPath(player.avatarUrl)" 
+                                         [alt]="player.nickname" 
+                                         class="avatar-image"
+                                         (error)="player.avatarUrl = null">
+                                }
+                                <!-- Если нет аватара - показываем цветной круг с инициалами -->
+                                @if(!player.avatarUrl) {
+                                    <div class="avatar-placeholder" [style.background-color]="getAvatarColor(player.nickname)">
+                                        {{ getInitials(player.nickname) }}
+                                    </div>
+                                }
+                            </div>
+                            <span class="username">{{ player.nickname }}</span>
                         </div>
-                        <span class="username">{{ player.nickname }}</span>
                     </div>
-                    <button class="invite-btn" (click)="invitePlayer(player)">
-                        пригласить
-                    </button>
                 </li>
             </ul>
 
@@ -76,6 +76,15 @@
                         (click)="nextPage()" 
                         [disabled]="currentPage === totalPages">
                     →
+                </button>
+            </div>
+
+            <!-- Кнопка приглашения -->
+            <div class="invite-section">
+                <button class="invite-btn" 
+                        (click)="inviteSelectedPlayer()"
+                        [disabled]="!selectedPlayerId">
+                    Пригласить выбранного игрока
                 </button>
             </div>
         </div>

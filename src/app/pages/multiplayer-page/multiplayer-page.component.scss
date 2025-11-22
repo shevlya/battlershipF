@@ -33,21 +33,16 @@
 }
 
 .table-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 15px;
-    padding: 0 15px 15px 15px;
+    padding: 0 15px 20px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
     font-weight: bold;
     font-size: 1.1em;
+    text-align: center;
+    margin-bottom: 15px;
 }
 
 .header-player {
-    text-align: left;
-}
-
-.header-action {
-    text-align: right;
+    text-align: center;
 }
 
 .players-list {
@@ -57,15 +52,37 @@
 }
 
 .player-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 15px;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 10px;
+    
+    &:first-child {
+        margin-top: 5px; /* Добавил небольшой отступ сверху для первого элемента */
+    }
     
     &:last-child {
-        border-bottom: none;
+        margin-bottom: 0;
+    }
+}
+
+.player-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-color: rgba(255, 255, 255, 0.1);
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+    }
+
+    &.selected {
+        background-color: rgba(220, 190, 255, 0.4);
+        border-color: rgba(255, 255, 255, 0.7);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
     }
 }
 
@@ -112,21 +129,38 @@
     color: white;
 }
 
+.invite-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .invite-btn {
+    width: 100%;
+    padding: 14px 20px;
     background-color: rgba(220, 190, 255, 0.6);
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 0.9em;
+    border-radius: 8px;
+    font-size: 1.1em;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(4px);
     
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: rgba(220, 190, 255, 0.8);
-        transform: scale(1.05);
+        transform: scale(1.03);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: rgba(255, 255, 255, 0.2);
+        
+        &:hover {
+            transform: none;
+        }
     }
 }
 
@@ -284,19 +318,17 @@
     }
     
     .table-header {
-        padding: 0 10px 10px 10px;
+        padding: 0 10px 15px 10px;
         font-size: 1em;
+        margin-bottom: 10px;
     }
     
-    .player-row {
-        padding: 12px 10px;
-        grid-template-columns: 1fr;
-        gap: 10px;
+    .player-option {
+        padding: 12px;
     }
     
     .player-info {
-        justify-content: center;
-        text-align: center;
+        gap: 12px;
     }
     
     .avatar-container {
@@ -312,9 +344,8 @@
         font-size: 1em;
     }
     
-    .invite-btn {
-        width: 100%;
-        padding: 10px;
+    .player-row:first-child {
+        margin-top: 3px;
     }
     
     .btn-back {

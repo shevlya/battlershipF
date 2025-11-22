@@ -24,6 +24,9 @@ export class MultiplayerPageComponent implements OnInit {
   pageSize = 5;
   totalPages = 1;
 
+  // Выбранный игрок
+  selectedPlayerId: number | null = null;
+
   constructor(
     private router: Router,
     private playerService: PlayerService,
@@ -68,6 +71,26 @@ export class MultiplayerPageComponent implements OnInit {
         this.paginatedPlayers = [];
       }
     });
+  }
+
+  // Выбор игрока
+  selectPlayer(playerId: number) {
+    this.selectedPlayerId = playerId;
+    console.log('Выбран игрок с ID:', playerId);
+  }
+
+  // Приглашение выбранного игрока
+  inviteSelectedPlayer() {
+    if (!this.selectedPlayerId) return;
+
+    const selectedPlayer = this.players.find(player => player.playerId === this.selectedPlayerId);
+    if (selectedPlayer) {
+      console.log('Приглашение отправлено игроку:', selectedPlayer.nickname);
+      
+      this.router.navigate(['/waiting'], { 
+        queryParams: { opponent: selectedPlayer.nickname } 
+      });
+    }
   }
 
   // Обновление пагинации
@@ -154,13 +177,5 @@ export class MultiplayerPageComponent implements OnInit {
     }
     
     return colors[Math.abs(hash) % colors.length];
-  }
-
-  invitePlayer(player: Player) {
-    console.log('Приглашение отправлено игроку:', player.nickname);
-    
-    this.router.navigate(['/waiting'], { 
-      queryParams: { opponent: player.nickname } 
-    });
   }
 }
