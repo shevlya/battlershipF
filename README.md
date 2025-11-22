@@ -1,6 +1,6 @@
 # К прочтению
 
-## Мои версии:  
+## Версии:  
 Angular CLI: 17.3.17  
 [Angular CLI](https://github.com/angular/angular-cli)  
 Node: 20.9.0  
