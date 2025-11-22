@@ -30,7 +30,7 @@
             </div>
             
             <ul class="players-list">
-                <li class="player-row" *ngFor="let player of players">
+                <li class="player-row" *ngFor="let player of paginatedPlayers">
                     <div class="player-info">
                         <div class="avatar-container">
                             <!-- Если есть аватар - показываем изображение -->
@@ -54,6 +54,30 @@
                     </button>
                 </li>
             </ul>
+
+            <!-- Пагинация -->
+            <div class="pagination" *ngIf="totalPages > 1">
+                <button class="pagination-btn" 
+                        (click)="previousPage()" 
+                        [disabled]="currentPage === 1">
+                    ←
+                </button>
+                
+                <div class="page-numbers">
+                    <span *ngFor="let page of getPageNumbers()" 
+                          class="page-number"
+                          [class.active]="page === currentPage"
+                          (click)="goToPage(page)">
+                        {{ page }}
+                    </span>
+                </div>
+                
+                <button class="pagination-btn" 
+                        (click)="nextPage()" 
+                        [disabled]="currentPage === totalPages">
+                    →
+                </button>
+            </div>
         </div>
         
         <a routerLink="/lobby" class="btn-back">Вернуться в лобби</a>

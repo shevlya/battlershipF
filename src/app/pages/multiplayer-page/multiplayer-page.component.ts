@@ -14,9 +14,15 @@ import { AuthService } from '../../services/auth.service';
 })
 export class MultiplayerPageComponent implements OnInit {
   players: Player[] = [];
+  paginatedPlayers: Player[] = [];
   currentPlayer: any = null;
   loading = true;
   error = '';
+
+  // Пагинация
+  currentPage = 1;
+  pageSize = 5;
+  totalPages = 1;
 
   constructor(
     private router: Router,
@@ -49,6 +55,7 @@ export class MultiplayerPageComponent implements OnInit {
           this.players = players;
         }
         
+        this.updatePagination();
         this.loading = false;
         this.error = '';
         console.log('Отфильтрованный список игроков:', this.players);
@@ -58,8 +65,63 @@ export class MultiplayerPageComponent implements OnInit {
         this.error = 'Не удалось загрузить список игроков';
         this.loading = false;
         this.players = [];
+        this.paginatedPlayers = [];
       }
     });
+  }
+
+  // Обновление пагинации
+  updatePagination() {
+    this.totalPages = Math.ceil(this.players.length / this.pageSize);
+    this.currentPage = Math.min(this.currentPage, this.totalPages) || 1;
+    
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedPlayers = this.players.slice(startIndex, endIndex);
+  }
+
+  // Переход на предыдущую страницу
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  // Переход на следующую страницу
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  // Переход на конкретную страницу
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  // Получение номеров страниц для отображения
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    
+    // Корректируем начальную страницу, если мы в конце
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   }
 
   // Метод для получения пути к аватару
