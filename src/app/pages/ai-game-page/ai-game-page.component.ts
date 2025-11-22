@@ -15,17 +15,12 @@ export class AiGamePageComponent {
 
   selectDifficulty(level: string) {
     this.selectedDifficulty = level;
-    console.log('Выбран уровень сложности:', level);
   }
 
   startGame() {
     if (this.selectedDifficulty) {
       console.log('Начинаем игру с уровнем сложности:', this.selectedDifficulty);
-      // Здесь можно добавить навигацию на страницу игры
-      // this.router.navigate(['/game'], { state: { difficulty: this.selectedDifficulty } });
-      
-      // Временно покажем alert
-      alert(`Игра начинается с уровнем сложности: ${this.selectedDifficulty}`);
+      this.router.navigate(['/placement'], { state: { difficulty: this.selectedDifficulty } });
     }
   }
 }
