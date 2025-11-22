@@ -103,4 +103,9 @@ export class ProfilePageComponent implements OnInit {
   changePassword() {
     this.router.navigate(['/change-password']);
   }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/']);
+  }
 }
