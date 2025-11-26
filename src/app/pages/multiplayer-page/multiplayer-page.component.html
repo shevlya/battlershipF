@@ -3,8 +3,6 @@
     <a routerLink="/lobby" class="lobby-button">Вернуться в лобби</a>
     
     <div class="multiplayer-card">
-        <h2>Мультиплеерная игра</h2>
-        
         <!-- Сообщение об ошибке -->
         @if(error) {
             <div class="error-message">
@@ -81,15 +79,15 @@
                     →
                 </button>
             </div>
-
-            <!-- Кнопка приглашения -->
-            <div class="invite-section">
-                <button class="invite-btn" 
-                        (click)="inviteSelectedPlayer()"
-                        [disabled]="!selectedPlayerId">
-                    Пригласить выбранного игрока
-                </button>
-            </div>
         </div>
+    </div>
+
+    <!-- Кнопка приглашения вынесена за пределы основной плашки -->
+    <div class="invite-container" *ngIf="players.length > 0">
+        <button class="invite-btn" 
+                (click)="inviteSelectedPlayer()"
+                [disabled]="!selectedPlayerId">
+            Пригласить выбранного игрока
+        </button>
     </div>
 </div>
