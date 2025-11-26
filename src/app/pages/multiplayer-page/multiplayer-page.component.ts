@@ -47,11 +47,11 @@ export class MultiplayerPageComponent implements OnInit {
     this.playerService.getAllPlayers().subscribe({
       next: (players) => {
         console.log('Загружены игроки из БД:', players);
-        
         // Исключаем текущего игрока из списка
         if (this.currentPlayer) {
+          const currentUserId = Number(this.currentPlayer.playerId || this.currentPlayer.id || this.currentPlayer.player_id);
           this.players = players.filter(player => 
-            player.playerId !== this.currentPlayer.player_id
+            Number(player.playerId) !== currentUserId
           );
         } else {
           this.players = players;
@@ -61,6 +61,8 @@ export class MultiplayerPageComponent implements OnInit {
         this.loading = false;
         this.error = '';
         console.log('Отфильтрованный список игроков:', this.players);
+        console.log('Текущий пользователь ID:', this.currentPlayer ? 
+          (this.currentPlayer.playerId || this.currentPlayer.id || this.currentPlayer.player_id) : 'не определен');
       },
       error: (err) => {
         console.error('Ошибка при загрузке игроков:', err);
