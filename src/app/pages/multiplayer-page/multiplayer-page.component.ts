@@ -19,9 +19,8 @@ export class MultiplayerPageComponent implements OnInit {
   loading = true;
   error = '';
 
-  // Пагинация
   currentPage = 1;
-  pageSize = 5;
+  pageSize = 4;
   totalPages = 1;
 
   // Выбранный игрок

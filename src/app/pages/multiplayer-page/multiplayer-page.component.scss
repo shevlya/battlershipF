@@ -2,14 +2,16 @@
     position: relative;
     height: 100vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
     padding: 20px;
+    padding-top: 120px;
     overflow: hidden;
     box-sizing: border-box;
+    gap: 20px;
 }
 
-/* Кнопка возврата в лобби в левом верхнем углу */
 .lobby-button {
     position: absolute;
     top: 20px;
@@ -36,37 +38,31 @@
 .multiplayer-card {
     background-color: rgba(220, 190, 255, 0.7);
     border-radius: 15px;
-    padding: 35px;
-    max-width: 600px;
+    padding: 25px;
+    max-width: 550px;
     width: 100%;
     text-align: center;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(4px);
     color: white;
-    max-height: 95vh;
-    overflow-y: auto;
-}
-
-.multiplayer-card h2 {
-    font-size: 2.5rem;
-    margin-bottom: 30px;
-    letter-spacing: 1px;
+    overflow: visible;
+    max-height: none;
 }
 
 .players-table {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 25px;
+    padding: 15px;
+    overflow: visible;
 }
 
 .table-header {
-    padding: 0 15px 20px 15px;
+    padding: 0 15px 15px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
     font-weight: bold;
     font-size: 1.1em;
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .header-player {
@@ -77,10 +73,12 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    overflow: visible;
+    min-height: 280px;
 }
 
 .player-row {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     
     &:first-child {
         margin-top: 5px;
@@ -96,7 +94,7 @@
     align-items: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    padding: 15px;
+    padding: 12px;
     border-radius: 10px;
     border: 2px solid transparent;
     background-color: rgba(255, 255, 255, 0.1);
@@ -117,13 +115,13 @@
 .player-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     flex: 1;
 }
 
 .avatar-container {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -146,26 +144,27 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 1.1em;
     color: white;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .username {
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: bold;
     color: white;
 }
 
-.invite-section {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+.invite-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 550px;
+    margin-top: 0;
 }
 
 .invite-btn {
-    width: 100%;
-    padding: 14px 20px;
+    padding: 12px 25px;
     background-color: rgba(220, 190, 255, 0.6);
     color: white;
     border: none;
@@ -175,6 +174,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(4px);
+    min-width: 260px;
     
     &:hover:not(:disabled) {
         background-color: rgba(220, 190, 255, 0.8);
@@ -199,6 +199,10 @@
     padding: 20px;
     margin-bottom: 20px;
     text-align: center;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .loading-text {
@@ -212,6 +216,10 @@
     padding: 30px;
     margin-bottom: 20px;
     text-align: center;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .empty-text {
@@ -241,8 +249,8 @@
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -301,30 +309,12 @@
     }
 }
 
-/* Кастомный скроллбар для карточки */
-.multiplayer-card::-webkit-scrollbar {
-    width: 8px;
-}
-
-.multiplayer-card::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-.multiplayer-card::-webkit-scrollbar-thumb {
-    background: rgba(220, 190, 255, 0.5);
-    border-radius: 4px;
-}
-
-.multiplayer-card::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 190, 255, 0.7);
-}
-
 /* Адаптивность для мобильных устройств */
 @media (max-width: 600px) {
     .multiplayer-container {
         padding: 15px;
         height: 100vh;
+        gap: 15px;
     }
 
     .lobby-button {
@@ -337,12 +327,6 @@
     .multiplayer-card {
         padding: 20px;
         max-width: 95%;
-        max-height: 90vh;
-    }
-    
-    .multiplayer-card h2 {
-        font-size: 2rem;
-        margin-bottom: 20px;
     }
     
     .players-table {
@@ -356,11 +340,11 @@
     }
     
     .player-option {
-        padding: 12px;
+        padding: 10px;
     }
     
     .player-info {
-        gap: 12px;
+        gap: 10px;
     }
     
     .avatar-container {
@@ -373,11 +357,21 @@
     }
     
     .username {
-        font-size: 1em;
+        font-size: 0.95em;
     }
     
     .player-row:first-child {
         margin-top: 3px;
+    }
+
+    .invite-container {
+        max-width: 95%;
+    }
+
+    .invite-btn {
+        padding: 10px 20px;
+        font-size: 1em;
+        min-width: 220px;
     }
 
     .pagination {
@@ -399,18 +393,21 @@
         height: 35px;
         font-size: 1.1em;
     }
+
+    .players-list {
+        min-height: 240px;
+    }
+
+    .loading-message,
+    .empty-message {
+        min-height: 240px;
+    }
 }
 
 /* Для очень маленьких экранов */
 @media (max-width: 400px) {
     .multiplayer-card {
-        max-height: 85vh;
         padding: 15px;
-    }
-    
-    .multiplayer-card h2 {
-        font-size: 1.8rem;
-        margin-bottom: 15px;
     }
     
     .players-table {
@@ -422,5 +419,20 @@
         left: 10px;
         padding: 8px 16px;
         font-size: 0.9em;
+    }
+
+    .invite-btn {
+        padding: 8px 16px;
+        font-size: 0.95em;
+        min-width: 200px;
+    }
+
+    .players-list {
+        min-height: 220px;
+    }
+
+    .loading-message,
+    .empty-message {
+        min-height: 220px;
     }
 }
