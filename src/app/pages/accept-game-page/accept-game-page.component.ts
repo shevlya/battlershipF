@@ -3,21 +3,46 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
+/**
+ * Интерфейс для представления данных игрока
+ * Используется для отображения информации о пригласившем пользователе
+ */
 interface Player {
   id: number;
   username: string;
   avatar: string;
-  rating?: number;
-  gamesPlayed?: number;
+  rating?: number;     //  рейтинг игрока (не используется пока)
+  gamesPlayed?: number; //  количество сыгранных игр (не используется пока)
 }
 
+/**
+ * Интерфейс для представления игрового приглашения
+ * Содержит всю необходимую информацию о приглашении на игру
+ */
 interface Invitation {
-  id: number;
-  inviter: Player;
-  timestamp: string;
-  expiresIn: number;
+  id: number;          // Уникальный идентификатор приглашения
+  inviter: Player;     // Игрок, отправивший приглашение
+  timestamp: string;   // Время отправки приглашения
+  expiresIn: number;   // Время жизни приглашения в секундах
 }
 
+/**
+ * Компонент страницы принятия игрового приглашения
+ * 
+ * Основные функции:
+ * - Загрузка и отображение информации о приглашении
+ * - Обратный отсчет времени для принятия решения
+ * - Принятие или отклонение игрового приглашения
+ * - Автоматическое отклонение при истечении времени
+ * - Навигация к игре при принятии приглашения
+ * 
+ * @component
+ * @selector app-accept-game
+ * 
+ * Жизненный цикл:
+ * - OnInit: загрузка приглашения и запуск таймера
+ * - OnDestroy: очистка таймера для предотвращения утечек памяти
+ */
 @Component({
   selector: 'app-accept-game',
   standalone: true,
@@ -26,10 +51,32 @@ interface Invitation {
   styleUrl: './accept-game-page.component.scss'
 })
 export class AcceptGameComponent implements OnInit, OnDestroy {  
+  /**
+   * Текущее загруженное приглашение
+   * null - приглашение не загружено или не найдено
+   */
   invitation: Invitation | null = null;
+
+  /**
+   * Флаг состояния загрузки данных
+   * true - данные загружаются, false - загрузка завершена
+   */
   isLoading = true;
+
+  /**
+   * Сообщение об ошибке при загрузке или обработке приглашения
+   */
   errorMessage = '';
-  timeLeft = 60; // 60 секунд на принятие решения
+
+  /**
+   * Оставшееся время для принятия решения (в секундах)
+   * Начальное значение: 60 секунд
+   */
+  timeLeft = 60;
+
+  /**
+   * Ссылка на интервал таймера для очистки при уничтожении компонента
+   */
   private timer: any;
 
   constructor(
@@ -38,28 +85,51 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
     private http: HttpClient
   ) {}
 
+  /**
+   * Метод инициализации компонента
+   * Вызывается автоматически при создании компонента
+   * 
+   * Выполняемые действия:
+   * 1. Загрузка данных приглашения по ID из URL
+   * 2. Запуск таймера обратного отсчета
+   */
   ngOnInit() {
     this.loadInvitation();
     this.startTimer();
   }
 
+  /**
+   * Метод очистки ресурсов компонента
+   * Вызывается автоматически при уничтожении компонента (предотвращает утечку памяти через неочищенный таймер)
+   */
   ngOnDestroy() {
     if (this.timer) {
       clearInterval(this.timer);
     }
   }
 
+  /**
+   * Загрузка данных приглашения с сервера
+   * 
+   * Процесс загрузки:
+   * 1. Получение ID приглашения из параметров URL
+   * 2. Валидация наличия ID
+   * 3. HTTP запрос к API для получения данных приглашения
+   * 4. Обработка успешного ответа
+   * 5. Обработка ошибок загрузки
+   */
   loadInvitation() {
     // Получаем ID приглашения из параметров URL
     const inviteId = this.route.snapshot.paramMap.get('id');
     
+    // Валидация наличия ID приглашения
     if (!inviteId) {
       this.errorMessage = 'Приглашение не найдено';
       this.isLoading = false;
       return;
     }
 
-    // TODO: Заменить на реальный эндпоинт вашего API
+    // TODO: Заменить на реальный эндпоинт API
     this.http.get<Invitation>(`/api/invitations/${inviteId}`).subscribe({
       next: (invitation) => {
         this.invitation = invitation;
@@ -73,15 +143,34 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Запуск таймера обратного отсчета
+   * 
+   * Логика таймера:
+   * - Уменьшает timeLeft каждую секунду
+   * - При достижении 0 автоматически отклоняет приглашение
+   * - Использует setInterval для периодического выполнения
+   */
   startTimer() {
     this.timer = setInterval(() => {
       this.timeLeft--;
+      
+      // Автоматическое отклонение при истечении времени
       if (this.timeLeft <= 0) {
-        this.rejectInvite(); // Автоматическое отклонение при истечении времени
+        this.rejectInvite();
       }
     }, 1000);
   }
 
+  /**
+   * Метод принятия игрового приглашения
+   * 
+   * Процесс принятия:
+   * 1. Проверка наличия приглашения
+   * 2. Отправка запроса на сервер о принятии
+   * 3. При успехе - навигация на страницу подготовки к игре
+   * 4. При ошибке - уведомление пользователя
+   */
   acceptInvite() {
     if (!this.invitation) return;
 
@@ -89,9 +178,12 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
     this.http.post(`/api/invitations/${this.invitation.id}/accept`, {}).subscribe({
       next: () => {
         console.log('Приглашение принято');
+        
         // Переход на страницу расстановки кораблей или игры
         this.router.navigate(['/game-setup'], { 
-          queryParams: { opponentId: this.invitation?.inviter.id } 
+          queryParams: { 
+            opponentId: this.invitation?.inviter.id 
+          } 
         });
       },
       error: (error) => {
@@ -101,7 +193,17 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Метод отклонения игрового приглашения
+   * 
+   * Процесс отклонения:
+   * 1. Проверка наличия приглашения
+   * 2. Отправка запроса на сервер об отклонении
+   * 3. Навигация обратно в лобби
+   * 4. Обработка ошибок с гарантированной навигацией в лобби
+   */
   rejectInvite() {
+    // Если приглашение не загружено, просто переходим в лобби
     if (!this.invitation) {
       this.router.navigate(['/lobby']);
       return;
@@ -115,17 +217,27 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Ошибка отклонения приглашения:', error);
+        
+        // Даже при ошибке отправки переходим в лобби
         this.router.navigate(['/lobby']);
       }
     });
   }
 
-  // Добавьте этот метод для навигации из шаблона
+  /**
+   * Вспомогательный метод для навигации в лобби
+   * Используется в шаблоне для кнопки "Вернуться в лобби"
+   */
   navigateToLobby() {
     this.router.navigate(['/lobby']);
   }
 
-  // Устанавливаем изображение-заглушку при ошибке загрузки аватара
+  /**
+   * Обработчик ошибки загрузки изображения аватара
+   * Устанавливает изображение-заглушку при невозможности загрузить аватар
+   * 
+   * @param event - Событие ошибки загрузки изображения
+   */
   handleImageError(event: any) {
     event.target.src = '/assets/avatars/defavatar.jpg';
   }

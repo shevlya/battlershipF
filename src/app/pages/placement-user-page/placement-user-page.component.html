@@ -32,11 +32,23 @@
       </div>
       
       <div class="action-buttons">
-        <button class="btn" (click)="savePlacement()">Сохранить расстановку</button>
+        <button class="btn" 
+                (click)="openSavePopup()" 
+                [disabled]="!hasAtLeastOneShip()">
+          Сохранить расстановку
+        </button>
         <button class="btn" (click)="generateRandom()">Сгенерировать случайно</button>
-        <button class="btn" (click)="loadPlacement()">Загрузить расстановку</button>
-        <button class="btn" (click)="clearBoard()">Очистить поле</button>
-        <button class="btn primary" (click)="startGame()" [disabled]="!isAllShipsPlaced()">Начать игру</button>
+        <button class="btn" (click)="openLoadPopup()">Загрузить расстановку</button>
+        <button class="btn coral" 
+                (click)="requestClearBoard()" 
+                [disabled]="!hasAtLeastOneShip()">
+          Очистить поле
+        </button>
+        <button class="btn primary" 
+                (click)="startGame()" 
+                [disabled]="!isAllShipsPlaced()">
+          Начать игру
+        </button>
       </div>
     </div>
     
@@ -201,3 +213,111 @@
     </div>
   </div>
 </div>
+
+<!-- Попап для подтверждения очистки поля -->
+@if (showClearConfirmation) {
+  <div class="popup-overlay" (click)="cancelClear()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Вы уверены, что хотите очистить поле?</h3>
+        <button class="popup-close" (click)="cancelClear()">&times;</button>
+      </div>
+      
+      <div class="popup-body">
+        <p>Все расставленные корабли будут удалены.</p>
+        <div class="clear-actions">
+          <button class="btn coral" (click)="confirmClear()">Очистить поле</button>
+          <button class="btn" (click)="cancelClear()">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для сохранения расстановки -->
+@if (showSavePopup) {
+  <div class="popup-overlay" (click)="closeSavePopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Сохранить расстановку</h3>
+        <button class="popup-close" (click)="closeSavePopup()">&times;</button>
+      </div>
+      
+      <div class="popup-body">
+        <div class="save-form">
+          <label for="placementName">Название расстановки:</label>
+          <input type="text" 
+                 id="placementName" 
+                 [(ngModel)]="newPlacementName" 
+                 placeholder="Введите название"
+                 class="save-input"
+                 (keyup.enter)="savePlacement()">
+          <div class="save-actions">
+            <button class="btn primary" (click)="savePlacement()">Сохранить</button>
+            <button class="btn" (click)="closeSavePopup()">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для загрузки расстановок -->
+@if (showLoadPopup) {
+  <div class="popup-overlay" (click)="closeLoadPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Загрузить расстановку</h3>
+        <button class="popup-close" (click)="closeLoadPopup()">&times;</button>
+      </div>
+      
+      <div class="popup-body">
+        <div class="strategies-section">
+          <h4>Базовые стратегии</h4>
+          <div class="strategy-options">
+            <button class="strategy-btn" (click)="loadStrategy('coastal')">
+              <span class="strategy-name">Береговая стратегия</span>
+              <span class="strategy-desc">Корабли размещаются преимущественно у границ поля</span>
+            </button>
+            
+            <button class="strategy-btn" (click)="loadStrategy('diagonal')">
+              <span class="strategy-name">Диагональная стратегия</span>
+              <span class="strategy-desc">Корабли размещаются по диагоналям поля</span>
+            </button>
+            
+            <button class="strategy-btn" (click)="loadStrategy('halfField')">
+              <span class="strategy-name">Полупольная стратегия</span>
+              <span class="strategy-desc">Корабли концентрируются в одной половине поля</span>
+            </button>
+
+            <button class="strategy-btn" (click)="loadStrategy('spread')">
+              <span class="strategy-name">Стратегия разброса</span>
+              <span class="strategy-desc">Хаотичное размещение без очевидных закономерностей</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="user-placements-section">
+          <h4>Мои расстановки</h4>
+          @if (userPlacements.length > 0) {
+            <div class="user-placements-list">
+              @for (placement of userPlacements; track placement.id) {
+                <div class="placement-item">
+                  <span class="placement-name">{{ placement.name }}</span>
+                  <span class="placement-date">{{ placement.date | date:'dd.MM.yyyy' }}</span>
+                  <button class="placement-load-btn" (click)="loadUserPlacement(placement)">
+                    Загрузить
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-placements">
+              <p>У вас пока нет сохраненных расстановок</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
