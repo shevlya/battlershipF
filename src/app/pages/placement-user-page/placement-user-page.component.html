@@ -1,0 +1,203 @@
+<div class="placement-container">
+  <h2>Ваше игровое поле</h2>
+  
+  <div class="main-content">
+    <div class="game-board-section">
+      <div class="game-board" 
+           (dragover)="onDragOver($event)" 
+           (drop)="onDrop($event)"
+           (dragleave)="onDragLeave($event)">
+        <div class="board-header">
+          <div class="empty-cell"></div>
+          @for (col of columns; track col) {
+            <div class="column-header">{{col}}</div>
+          }
+        </div>
+        
+        @for (row of rows; track row) {
+          <div class="board-row">
+            <div class="row-header">{{row}}</div>
+            @for (col of columns; track col) {
+              <div 
+                class="cell" 
+                [attr.data-row]="row"
+                [attr.data-col]="col"
+                [class.has-ship]="hasShip(row, col)"
+                [class.valid-drop]="isValidDropZone(row, col)"
+                [class.invalid-drop]="isInvalidDropZone(row, col)">
+              </div>
+            }
+          </div>
+        }
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn" (click)="savePlacement()">Сохранить расстановку</button>
+        <button class="btn" (click)="generateRandom()">Сгенерировать случайно</button>
+        <button class="btn" (click)="loadPlacement()">Загрузить расстановку</button>
+        <button class="btn" (click)="clearBoard()">Очистить поле</button>
+        <button class="btn primary" (click)="startGame()" [disabled]="!isAllShipsPlaced()">Начать игру</button>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="ships-panel">
+        <h3>Корабли для расстановки:</h3>
+        <div class="orientation-info">
+          <span class="orientation-label">Ориентация:</span>
+          <span class="orientation-value">{{isHorizontal ? 'Горизонтальная' : 'Вертикальная'}}</span>
+          <span class="orientation-hint">(двойной клик по кораблю для смены)</span>
+        </div>
+        <div class="ships-list">
+          <div class="ship-row">
+            <!-- Линкор (4 клетки) -->
+            @if (getRemainingShipsCount('battleship') > 0) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="4" 
+                   data-type="battleship" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3,4]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+            
+            <!-- Первый крейсер (3 клетки) -->
+            @if (getRemainingShipsCount('cruiser') > 0) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="3" 
+                   data-type="cruiser" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+          
+          <div class="ship-row">
+            <!-- Второй крейсер (3 клетки) -->
+            @if (getRemainingShipsCount('cruiser') > 1) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="3" 
+                   data-type="cruiser" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+            
+            <!-- Первый эсминец (2 клетки) -->
+            @if (getRemainingShipsCount('destroyer') > 0) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="2" 
+                   data-type="destroyer" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+          
+          <div class="ship-row">
+            <!-- Второй эсминец (2 клетки) -->
+            @if (getRemainingShipsCount('destroyer') > 1) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="2" 
+                   data-type="destroyer" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+            
+            <!-- Третий эсминец (2 клетки) -->
+            @if (getRemainingShipsCount('destroyer') > 2) {
+              <div class="ship draggable" 
+                   [class.vertical]="!isHorizontal"
+                   data-size="2" 
+                   data-type="destroyer" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+          
+          <div class="ship-row">
+            <!-- Первый катер (1 клетка) -->
+            @if (getRemainingShipsCount('boat') > 0) {
+              <div class="ship draggable" 
+                   data-size="1" 
+                   data-type="boat" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+            
+            <!-- Второй катер (1 клетка) -->
+            @if (getRemainingShipsCount('boat') > 1) {
+              <div class="ship draggable" 
+                   data-size="1" 
+                   data-type="boat" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+          </div>
+          
+          <div class="ship-row">
+            <!-- Третий катер (1 клетка) -->
+            @if (getRemainingShipsCount('boat') > 2) {
+              <div class="ship draggable" 
+                   data-size="1" 
+                   data-type="boat" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+            
+            <!-- Четвертый катер (1 клетка) -->
+            @if (getRemainingShipsCount('boat') > 3) {
+              <div class="ship draggable" 
+                   data-size="1" 
+                   data-type="boat" 
+                   draggable="true" 
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

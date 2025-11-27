@@ -13,7 +13,7 @@ import { AiGamePageComponent } from './pages/ai-game-page/ai-game-page.component
 import { ProfilePageComponent } from './pages/profile-page/profile-page.component';
 import { ChangeAvatarPageComponent } from './pages/change-avatar-page/change-avatar-page.component';
 import { ChangePasswordPageComponent } from './pages/change-password-page/change-password-page.component';
-import { PlacementPageComponent } from './pages/placement-page/placement-page.component';
+import { PlacementUserPageComponent } from './pages/placement-user-page/placement-user-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent }, // Главная страница
@@ -30,6 +30,6 @@ export const routes: Routes = [
   { path: 'profile', component: ProfilePageComponent}, 
   {path: 'change-avatar', component: ChangeAvatarPageComponent},
   { path: 'change-password', component: ChangePasswordPageComponent},
-  { path: 'placement', component: PlacementPageComponent},
+  { path: 'placement', component: PlacementUserPageComponent},
   { path: '**', redirectTo: '' }
 ];

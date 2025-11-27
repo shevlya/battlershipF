@@ -1,0 +1,303 @@
+.placement-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 20px 20px; /* Измените эту строку */
+  font-family: Arial, sans-serif;
+  gap: 20px;
+  background: linear-gradient(135deg, rgba(240, 230, 255, 0.3), rgba(220, 190, 255, 0.1));
+  min-height: 100vh;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(220, 190, 255, 0.5);
+  font-size: 28px;
+}
+
+.main-content {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  max-width: 1300px;
+  width: 100%;
+  justify-content: center;
+}
+
+.game-board-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 600px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.ships-panel {
+  border: 2px solid rgba(220, 190, 255, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  background-color: rgba(245, 240, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(220, 190, 255, 0.4);
+}
+
+.ships-panel h3 {
+  margin-top: 0;
+  color: #5a4a6d;
+  margin-bottom: 8px; 
+  font-size: 18px;
+}
+
+.orientation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: rgba(220, 190, 255, 0.2);
+  border-radius: 5px;
+  border: 1px solid rgba(220, 190, 255, 0.5);
+}
+
+.orientation-label {
+  font-weight: bold;
+  color: #5a4a6d;
+  font-size: 14px;
+}
+
+.orientation-value {
+  color: #5a4a6d;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.orientation-hint {
+  color: #7a6a8d;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.ships-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ship-row {
+  display: flex;
+  gap: 15px;
+  justify-content: space-between;
+}
+
+.ship {
+  display: flex;
+  gap: 1px;
+  cursor: move;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &.draggable {
+    opacity: 1;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+  
+  // Вертикальная ориентация
+  &.vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    // Для вертикальных кораблей уменьшаем ширину, чтобы они не растягивались
+    &[data-size="1"] {
+      width: 30px;
+    }
+    
+    &[data-size="2"] {
+      width: 30px;
+    }
+    
+    &[data-size="3"] {
+      width: 30px;
+    }
+    
+    &[data-size="4"] {
+      width: 30px;
+    }
+  }
+  
+  &[data-size="1"] {
+    .ship-cell {
+      width: 30px;
+      height: 30px;
+    }
+  }
+  
+  &[data-size="2"] {
+    .ship-cell {
+      width: 30px;
+      height: 30px;
+    }
+  }
+  
+  &[data-size="3"] {
+    .ship-cell {
+      width: 30px;
+      height: 30px;
+    }
+  }
+  
+  &[data-size="4"] {
+    .ship-cell {
+      width: 30px;
+      height: 30px;
+    }
+  }
+}
+
+.ship-cell {
+  background-color: rgba(220, 190, 255, 0.7);
+  border: 1px solid rgba(180, 150, 215, 0.9);
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  border: 3px solid rgba(220, 190, 255, 0.7);
+  margin-bottom: 25px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(220, 190, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.board-header {
+  display: flex;
+}
+
+.board-row {
+  display: flex;
+}
+
+.empty-cell, .row-header, .column-header, .cell {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(220, 190, 255, 0.5);
+  font-size: 16px;
+}
+
+.row-header, .column-header {
+  background-color: rgba(220, 190, 255, 0.3);
+  font-weight: bold;
+  color: #5a4a6d;
+}
+
+.cell {
+  background-color: rgba(230, 220, 255, 0.5);
+  
+  &.has-ship {
+    background-color: rgba(220, 190, 255, 0.7);
+    border: 1px solid rgba(180, 150, 215, 0.9);
+  }
+  
+  &.valid-drop {
+    background-color: rgba(200, 255, 200, 0.6);
+    border: 2px dashed rgba(100, 200, 100, 0.8);
+  }
+  
+  &.invalid-drop {
+    background-color: rgba(255, 200, 200, 0.6);
+    border: 2px dashed rgba(200, 100, 100, 0.8);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 18px;
+  border: 1px solid rgba(220, 190, 255, 0.7);
+  background-color: rgba(245, 240, 255, 0.9);
+  cursor: pointer;
+  border-radius: 6px;
+  color: #5a4a6d;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: rgba(220, 190, 255, 0.7);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(220, 190, 255, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  &.primary {
+    background-color: rgba(160, 130, 255, 0.9);
+    color: white;
+    border-color: rgba(100, 70, 160, 0.9);
+    
+    &:hover:not(:disabled) {
+      background-color: rgba(100, 70, 160, 0.9);
+      box-shadow: 0 4px 12px rgba(100, 70, 160, 0.5);
+    }
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .sidebar {
+    width: 100%;
+    max-width: 500px;
+  }
+  
+  .ship-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .empty-cell, .row-header, .column-header, .cell {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .ship.vertical {
+    flex-direction: row;
+    
+    &[data-size="1"],
+    &[data-size="2"],
+    &[data-size="3"],
+    &[data-size="4"] {
+      width: auto;
+    }
+  }
+}
