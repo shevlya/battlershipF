@@ -140,19 +140,33 @@ export class AuthService {
    * Выход пользователя из системы
    * 
    * Процесс выхода:
-   * 1. Удаление токена и данных пользователя из localStorage
-   * 2. Обновление состояния авторизации на false
-   * 3. Сброс данных текущего пользователя
-   * 4. Перенаправление на страницу входа
+   * 1. Отправка запроса на сервер для установки статуса offline
+   * 2. Удаление токена и данных пользователя из localStorage
+   * 3. Обновление состояния авторизации на false
+   * 4. Сброс данных текущего пользователя
+   * 5. Перенаправление на страницу входа
    * 
    * Вызывается при клике на "Выйти" или при истечении сессии
    */
   logout(): void {
+    const token = this.getToken();
+    if (token) {
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
+      // Отправляем запрос на бэкенд
+      this.http.post(`${this.API_URL}/logout`, {}, { headers }).subscribe({
+        next: () => console.log('✅ Статус пользователя обновлён на offline'),
+        error: (err) => console.warn('⚠️ Не удалось обновить статус на сервере:', err)
+      });
+    }
+
+    // Очищаем локальные данные
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.authState.next(false);
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/']);
   }
 
   /**
