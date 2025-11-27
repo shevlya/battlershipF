@@ -51,48 +51,26 @@
         </div>
       </div>
 
-      <div class="ship-selection">
-        <h3>Выбор корабля</h3>
-        <div class="ship-list">
-          <div class="ship-item active" data-size="4">
-            <span>Линкор (4)</span>
-            <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-            </div>
+      <!-- Перенесенные счетчики кораблей -->
+      <div class="control-section">
+        <h3>Осталось разместить</h3>
+        <div class="ship-counters-compact">
+          <div class="ship-counter-item">
+            <span class="counter-label">Линкоры (4):</span>
+            <span class="counter-value" id="battleshipCount">1</span>
           </div>
-          <div class="ship-item" data-size="3">
-            <span>Крейсер (3)</span>
-            <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-            </div>
+          <div class="ship-counter-item">
+            <span class="counter-label">Крейсеры (3):</span>
+            <span class="counter-value" id="cruiserCount">2</span>
           </div>
-          <div class="ship-item" data-size="2">
-            <span>Эсминец (2)</span>
-            <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-            </div>
+          <div class="ship-counter-item">
+            <span class="counter-label">Эсминцы (2):</span>
+            <span class="counter-value" id="destroyerCount">3</span>
           </div>
-          <div class="ship-item" data-size="1">
-            <span>Катер (1)</span>
-            <div class="ship-preview">
-              <div class="ship-cell"></div>
-            </div>
+          <div class="ship-counter-item">
+            <span class="counter-label">Катера (1):</span>
+            <span class="counter-value" id="boatCount">4</span>
           </div>
-        </div>
-      </div>
-
-      <div class="orientation-toggle">
-        <div class="orientation-btn active" data-orientation="horizontal">
-          Горизонтально
-        </div>
-        <div class="orientation-btn" data-orientation="vertical">
-          Вертикально
         </div>
       </div>
 
@@ -105,28 +83,64 @@
 
     <div class="game-board">
       <h2>Ваше поле</h2>
-      <div class="board-container">
-        <div class="board" id="playerBoard">
-          <!-- Игровое поле будет сгенерировано JavaScript -->
+      <div class="board-and-controls">
+        <div class="board-container">
+          <div class="board" id="playerBoard">
+            <!-- Игровое поле будет сгенерировано JavaScript -->
+          </div>
         </div>
       </div>
+      
+      <!-- Уменьшенные контролы под полем -->
+      <div class="bottom-controls">
+        <div class="control-section">
+          <h3>Выбор корабля</h3>
+          <div class="ship-selection-compact">
+            <div class="ship-type active" data-size="4">
+              <div class="ship-preview-compact">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+              <span class="ship-label">Линкор (4)</span>
+            </div>
+            <div class="ship-type" data-size="3">
+              <div class="ship-preview-compact">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+              <span class="ship-label">Крейсер (3)</span>
+            </div>
+            <div class="ship-type" data-size="2">
+              <div class="ship-preview-compact">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+              <span class="ship-label">Эсминец (2)</span>
+            </div>
+            <div class="ship-type" data-size="1">
+              <div class="ship-preview-compact">
+                <div class="ship-cell"></div>
+              </div>
+              <span class="ship-label">Катер (1)</span>
+            </div>
+          </div>
+        </div>
 
-      <div class="ship-counter">
-        <div class="ship-count">
-          <span>Линкоры (4):</span>
-          <span id="battleshipCount">1</span>
-        </div>
-        <div class="ship-count">
-          <span>Крейсеры (3):</span>
-          <span id="cruiserCount">2</span>
-        </div>
-        <div class="ship-count">
-          <span>Эсминцы (2):</span>
-          <span id="destroyerCount">3</span>
-        </div>
-        <div class="ship-count">
-          <span>Катера (1):</span>
-          <span id="boatCount">4</span>
+        <div class="control-section">
+          <h3>Ориентация</h3>
+          <div class="orientation-toggle-compact">
+            <div class="orientation-option active" data-orientation="horizontal">
+              <div class="orientation-icon horizontal"></div>
+              <span>Горизонтально</span>
+            </div>
+            <div class="orientation-option" data-orientation="vertical">
+              <div class="orientation-icon vertical"></div>
+              <span>Вертикально</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

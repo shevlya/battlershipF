@@ -60,6 +60,7 @@ export class PlacementPageComponent implements OnInit {
     this.initTooltips();
     this.initializeBoard();
     this.initializeUI();
+    this.updateShipCounters();
   }
 
   // Инициализация игрового поля
@@ -310,9 +311,9 @@ export class PlacementPageComponent implements OnInit {
     });
 
     // Обработчики для выбора корабля
-    document.querySelectorAll('.ship-item').forEach(item => {
+    document.querySelectorAll('.ship-type').forEach(item => {
       item.addEventListener('click', () => {
-        document.querySelectorAll('.ship-item').forEach(ship => {
+        document.querySelectorAll('.ship-type').forEach(ship => {
           ship.classList.remove('active');
         });
         item.classList.add('active');
@@ -322,9 +323,9 @@ export class PlacementPageComponent implements OnInit {
     });
 
     // Обработчики для выбора ориентации
-    document.querySelectorAll('.orientation-btn').forEach(btn => {
+    document.querySelectorAll('.orientation-option').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.orientation-btn').forEach(b => {
+        document.querySelectorAll('.orientation-option').forEach(b => {
           b.classList.remove('active');
         });
         btn.classList.add('active');
@@ -582,12 +583,10 @@ export class PlacementPageComponent implements OnInit {
 
   // Для инициализации тултипов
   initTooltips() {
-    // Тултипы работают через CSS, но можно добавить дополнительную логику если нужно
     const tooltipIcons = document.querySelectorAll('.tooltip-icon');
     tooltipIcons.forEach(icon => {
-      // Добавляем обработчики для дополнительной функциональности
       icon.addEventListener('click', (event) => {
-        event.stopPropagation(); // Предотвращаем всплытие события
+        event.stopPropagation();
       });
     });
   }
