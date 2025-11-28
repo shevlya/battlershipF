@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PlayerService, Player } from '../../services/player.service';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * Компонент страницы мультиплеера для выбора противника
@@ -55,7 +57,8 @@ export class MultiplayerPageComponent implements OnInit {
   constructor(
     private router: Router,
     private playerService: PlayerService,
-    private authService: AuthService
+    private authService: AuthService,
+    private http: HttpClient
   ) {}
 
   /**
@@ -63,16 +66,67 @@ export class MultiplayerPageComponent implements OnInit {
    * Загружает данные текущего пользователя и список всех игроков
    */
   ngOnInit() {
-    this.loadCurrentPlayer();
-    this.loadPlayers();
+    this.loadCurrentUserData();
   }
 
   /**
-   * Загрузка данных текущего пользователя из сервиса аутентификации
+   * Загрузка данных текущего пользователя с сервера
+   * Аналогично методу из профиля, но получаем только нужные данные
    */
-  loadCurrentPlayer() {
-    this.currentPlayer = this.authService.getCurrentUser();
-    console.log('Текущий пользователь:', this.currentPlayer);
+  loadCurrentUserData() {
+    this.loading = true;
+    
+    // Получение токена аутентификации
+    const token = this.authService.getToken();
+    if (!token) {
+      console.warn('Токен аутентификации не найден');
+      this.loadPlayers();
+      return;
+    }
+
+    // Настройка заголовков с токеном авторизации
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    /**
+     * Запрос актуальных данных пользователя с сервера
+     */
+    this.http.get<any>(`${environment.apiUrl}/api/players/current`, { headers }).subscribe({
+      next: (userData) => {
+        console.log('Данные пользователя с сервера (мультиплеер):', userData);
+        
+        // Преобразование данных сервера в структуру компонента
+        this.currentPlayer = {
+          player_id: userData.playerId,
+          nickname: userData.nickname,
+          avatarUrl: userData.avatarUrl || null,
+          totalGames: userData.totalGames || 0,
+          wins: userData.wins || 0,
+          losses: userData.losses || 0,
+          savedLayouts: userData.savedLayouts || 0
+        };
+        
+        // Синхронизация данных с сервисом аутентификации
+        this.authService.updateUser(this.currentPlayer);
+        
+        // После загрузки данных пользователя загружаем список игроков
+        this.loadPlayers();
+      },
+      error: (error) => {
+        console.error('Ошибка загрузки данных пользователя (мультиплеер):', error);
+        
+        /**
+         * Fallback механизм:
+         * При ошибке загрузки с сервера используем данные из AuthService
+         */
+        this.currentPlayer = this.authService.getCurrentUser();
+        console.log('Используем данные из AuthService:', this.currentPlayer);
+        
+        // Все равно загружаем список игроков
+        this.loadPlayers();
+      }
+    });
   }
 
   /**
@@ -80,7 +134,6 @@ export class MultiplayerPageComponent implements OnInit {
    * Исключает текущего пользователя из списка доступных противников
    */
   loadPlayers() {
-    this.loading = true;
     this.playerService.getAllPlayers().subscribe({
       next: (players) => {
         console.log('Загружены игроки из БД:', players);
