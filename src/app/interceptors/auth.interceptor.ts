@@ -43,7 +43,7 @@ export class AuthInterceptor implements HttpInterceptor {
    */
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Группировка логов для лучшей читаемости в консоли
-    console.group(`🔄 INTERCEPTOR: ${req.method} ${req.url}`);
+    console.group(`INTERCEPTOR: ${req.method} ${req.url}`);
     
     /**
      * Список публичных эндпоинтов, которые НЕ требуют JWT токена
@@ -66,7 +66,7 @@ export class AuthInterceptor implements HttpInterceptor {
      * Пропускаем запрос без изменений, так как токен не требуется
      */
     if (isPublicEndpoint) {
-      console.log('✅ Пропускаем без токена');
+      console.log('Пропускаем без токена');
       console.groupEnd();
       return next.handle(req);
     }
@@ -83,15 +83,15 @@ export class AuthInterceptor implements HttpInterceptor {
      * Если токен отсутствует - отправляем запрос без него (вернется 401 от сервера)
      */
     if (!token) {
-      console.error('❌ Токен отсутствует для защищенного эндпоинта:', req.url);
-      console.log('🔍 Проверка localStorage:');
+      console.error('Токен отсутствует для защищенного эндпоинта:', req.url);
+      console.log('Проверка localStorage:');
       console.log('   - auth-token:', localStorage.getItem('auth-token'));
       console.log('   - auth-user:', localStorage.getItem('auth-user'));
       console.groupEnd();
       return next.handle(req);
     }
 
-    console.log('✅ Токен найден, добавляем в заголовки');
+    console.log('Токен найден, добавляем в заголовки');
     
     /**
      * Клонирование запроса с добавлением заголовка Authorization
@@ -102,7 +102,7 @@ export class AuthInterceptor implements HttpInterceptor {
     });
 
     // Детальное логирование заголовков для отладки
-    console.log('📋 Заголовки запроса после клонирования:');
+    console.log('Заголовки запроса после клонирования:');
     cloned.headers.keys().forEach(key => {
       console.log(`   ${key}: ${cloned.headers.get(key)}`);
     });
@@ -120,16 +120,16 @@ export class AuthInterceptor implements HttpInterceptor {
        */
       tap(
         // Успешный ответ
-        event => console.log(`✅ INTERCEPTOR: Успешный ответ от ${req.url}`),
+        event => console.log(`INTERCEPTOR: Успешный ответ от ${req.url}`),
         // Ошибка (устаревший синтаксис, обычно используется catchError)
-        error => console.error(`❌ INTERCEPTOR: Ошибка от ${req.url}:`, error)
+        error => console.error(`INTERCEPTOR: Ошибка от ${req.url}:`, error)
       ),
       /**
        * Оператор catchError для обработки ошибок HTTP запросов
        * Позволяет перехватывать и анализировать ошибки без прерывания потока
        */
       catchError((error: HttpErrorResponse) => {
-        console.error('🔴 INTERCEPTOR: Перехвачена ошибка:');
+        console.error('   INTERCEPTOR: Перехвачена ошибка:');
         console.error('   URL:', error.url);
         console.error('   Status:', error.status);
         console.error('   Status Text:', error.statusText);
@@ -141,7 +141,7 @@ export class AuthInterceptor implements HttpInterceptor {
          * Это может указывать на проблемы с аутентификацией
          */
         if (error.status === 401) {
-          console.error('🔐 INTERCEPTOR: Ошибка 401 - Неавторизован');
+          console.error('INTERCEPTOR: Ошибка 401 - Неавторизован');
           console.error('Возможные причины:');
           console.error('   1. Токен просрочен');
           console.error('   2. Токен невалиден');
