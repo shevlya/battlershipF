@@ -1,0 +1,149 @@
+<div class="game-container">
+  <div class="game-header">
+    <div class="game-id">Game ID: {{ gameId }}</div>
+  </div>
+  
+  <div class="fields-container">
+    <!-- Ваше поле -->
+    <div class="field-section">
+      <h3>Ваше поле</h3>
+      <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
+      <div class="battlefield">
+        <div class="coordinates-row">
+          <div class="corner"></div>
+          <div *ngFor="let col of columns" class="coordinate">{{ col }}</div>
+        </div>
+        <div *ngFor="let row of rows; let i = index" class="battlefield-row">
+          <div class="coordinate">{{ row }}</div>
+          <div 
+            *ngFor="let col of columns; let j = index" 
+            class="cell"
+            [class.ship]="myField[i] && myField[i][j] === 1 && !myHits[i][j]"
+            [class.hit]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 1"
+            [class.miss]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 0"
+            [class.sunk]="isShipSunk(i, j, true)">
+            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 1) {
+              <span class="hit-mark">✕</span>
+            }
+            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 0) {
+              <span class="miss-mark">•</span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Поле соперника -->
+    <div class="field-section">
+      <h3>Поле соперника</h3>
+      <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
+      <div class="battlefield">
+        <div class="coordinates-row">
+          <div class="corner"></div>
+          <div *ngFor="let col of columns" class="coordinate">{{ col }}</div>
+        </div>
+        <div *ngFor="let row of rows; let i = index" class="battlefield-row">
+          <div class="coordinate">{{ row }}</div>
+          <div 
+            *ngFor="let col of columns; let j = index" 
+            class="cell"
+            [class.hit]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 1"
+            [class.miss]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 0"
+            [class.sunk]="isShipSunk(i, j, false)"
+            [class.selectable]="isYourTurn && opponentHits[i] && !opponentHits[i][j]"
+            (click)="onOpponentCellClick(i, j)">
+            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 1) {
+              <span class="hit-mark">✕</span>
+            }
+            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 0) {
+              <span class="miss-mark">•</span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-controls">
+    <div class="controls-left">
+      <div class="shots-info">
+        <div class="shot-stat">
+          <span class="label">Ваши выстрелы:</span>
+          <span class="value">{{ myShotsCount }}</span>
+        </div>
+        <div class="shot-stat">
+          <span class="label">Попадания:</span>
+          <span class="value hits">{{ myHitsCount }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="controls-center">
+      <div class="turn-status" [class.your-turn]="isYourTurn" [class.opponent-turn]="!isYourTurn">
+        {{ isYourTurn ? 'Ваш ход' : 'Ход соперника' }}
+      </div>
+    </div>
+    
+    <div class="controls-right">
+      <div class="action-buttons">
+        <button class="btn coral" (click)="surrender()">Сдаться</button>
+        <button class="btn" (click)="offerDraw()">Предложить ничью</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Попап для сдачи -->
+@if (showSurrenderPopup) {
+  <div class="popup-overlay" (click)="cancelSurrender()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Вы уверены, что хотите сдаться?</h3>
+        <button class="popup-close" (click)="cancelSurrender()">&times;</button>
+      </div>
+      <div class="popup-body">
+        <p class="warning-text">После нажатия кнопки "Сдаться", действие нельзя будет отменить!</p>
+        <div class="surrender-actions">
+          <button class="btn coral" (click)="confirmSurrender()">Сдаться</button>
+          <button class="btn" (click)="cancelSurrender()">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для предложения ничьи -->
+@if (showDrawPopup) {
+  <div class="popup-overlay" (click)="closeDrawPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Вы предложили сопернику ничью</h3>
+        <button class="popup-close" (click)="closeDrawPopup()">&times;</button>
+      </div>
+      <div class="popup-body">
+        <p>Вы предложили ничью. Ожидание ответа соперника...</p>
+        <div class="draw-actions">
+          <button class="btn" (click)="cancelDrawOffer()">Отозвать предложение</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для ответа на ничью -->
+@if (showDrawResponsePopup) {
+  <div class="popup-overlay" (click)="declineDraw()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Предложение ничьи</h3>
+      </div>
+      <div class="popup-body">
+        <p>Соперник предложил ничью. Принять предложение?</p>
+        <div class="draw-response-actions">
+          <button class="btn primary" (click)="acceptDraw()">Принять</button>
+          <button class="btn" (click)="declineDraw()">Отклонить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,527 @@
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 20px 20px;
+  font-family: Arial, sans-serif;
+  gap: 20px;
+  background: linear-gradient(135deg, rgba(240, 230, 255, 0.3), rgba(220, 190, 255, 0.1));
+  min-height: 100vh;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 20px;
+}
+
+.game-id {
+  font-size: 18px;
+  font-weight: bold;
+  background: rgba(245, 240, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  color: #5a4a6d;
+  border: 1px solid rgba(220, 190, 255, 0.7);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.fields-container {
+  display: flex;
+  gap: 50px;
+  justify-content: center;
+  margin-bottom: 30px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+.field-section {
+  text-align: center;
+  flex: 1;
+  
+  h3 {
+    margin-bottom: 10px;
+    color: #f5f5f5;
+    font-size: 24px;
+    text-shadow: 1px 1px 2px rgba(220, 190, 255, 0.5);
+  }
+}
+
+.ships-count {
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #f6d8eb;
+  font-weight: bold;
+}
+
+.battlefield {
+  display: inline-block;
+  border: 3px solid rgba(220, 190, 255, 0.7);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(220, 190, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.coordinates-row {
+  display: flex;
+}
+
+.battlefield-row {
+  display: flex;
+}
+
+.corner {
+  width: 35px;
+  height: 35px;
+}
+
+.coordinate {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  background-color: rgba(220, 190, 255, 0.3);
+  color: #5a4a6d;
+  border: 1px solid rgba(220, 190, 255, 0.5);
+  font-size: 14px;
+}
+
+.cell {
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(220, 190, 255, 0.5);
+  background-color: rgba(230, 220, 255, 0.5);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  
+  // Стили для моего поля - корабли
+  &.ship {
+    background-color: rgba(220, 190, 255, 0.7);
+    border: 1px solid rgba(180, 150, 215, 0.9);
+    
+    &:hover {
+      background-color: rgba(220, 190, 255, 0.8);
+    }
+  }
+  
+  // Стили для попаданий
+  &.hit {
+    background-color: rgba(255, 107, 107, 0.8);
+    border: 1px solid rgba(255, 77, 77, 0.9);
+    
+    .hit-mark {
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
+  
+  // Стили для промахов
+  &.miss {
+    background-color: rgba(200, 230, 255, 0.6);
+    
+    .miss-mark {
+      color: rgba(90, 74, 109, 0.7);
+      font-size: 18px;
+      font-weight: bold;
+    }
+  }
+  
+  // Стили для потопленных кораблей
+  &.sunk {
+    background-color: rgba(220, 53, 69, 0.9);
+    border: 1px solid rgba(220, 53, 69, 1);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.3) 50%, transparent 55%);
+    }
+  }
+  
+  // Стили для выбора на поле противника
+  &.selectable {
+    cursor: pointer;
+    
+    &:hover {
+      background-color: rgba(200, 180, 255, 0.7);
+      border: 1px solid rgba(160, 130, 255, 0.8);
+      transform: scale(1.1);
+      z-index: 1;
+      box-shadow: 0 0 10px rgba(160, 130, 255, 0.4);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  
+}
+
+.game-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: rgba(245, 240, 255, 0.9);
+  border-radius: 10px;
+  border: 2px solid rgba(220, 190, 255, 0.7);
+  max-width: 1200px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(220, 190, 255, 0.4);
+}
+
+.controls-left,
+.controls-center,
+.controls-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.controls-left {
+  justify-content: flex-start;
+}
+
+.controls-center {
+  justify-content: center;
+}
+
+.controls-right {
+  justify-content: flex-end;
+}
+
+.shots-info {
+  display: flex;
+  gap: 40px;
+  
+  .shot-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .label {
+      font-size: 14px;
+      color: #7a6a8d;
+      margin-bottom: 5px;
+    }
+    
+    .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #5a4a6d;
+      
+      &.hits {
+        color: #4CAF50;
+      }
+    }
+  }
+}
+
+.turn-status {
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  text-align: center;
+  width: fit-content;
+  
+  &.your-turn {
+    background: linear-gradient(135deg, rgba(144, 238, 144, 0.9), rgba(100, 220, 100, 0.9));
+    color: white;
+    box-shadow: 0 4px 15px rgba(144, 238, 144, 0.4);
+    animation: pulse 2s infinite;
+  }
+  
+  &.opponent-turn {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(238, 90, 82, 0.9));
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 12px 18px;
+  border: 1px solid rgba(220, 190, 255, 0.7);
+  background-color: rgba(245, 240, 255, 0.9);
+  cursor: pointer;
+  border-radius: 6px;
+  color: #5a4a6d;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: rgba(220, 190, 255, 0.7);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(220, 190, 255, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  &.primary {
+    background-color: rgba(160, 130, 255, 0.9);
+    color: white;
+    border-color: rgba(100, 70, 160, 0.9);
+    
+    &:hover:not(:disabled) {
+      background-color: rgba(100, 70, 160, 0.9);
+      box-shadow: 0 4px 12px rgba(100, 70, 160, 0.5);
+    }
+  }
+  
+  // Коралловая кнопка для сдачи
+  &.coral {
+    background-color: rgba(255, 127, 80, 0.9);
+    color: white;
+    border-color: rgba(205, 92, 92, 0.9);
+    
+    &:hover:not(:disabled) {
+      background-color: rgba(205, 92, 92, 0.9);
+      box-shadow: 0 4px 12px rgba(205, 92, 92, 0.5);
+    }
+  }
+}
+
+/* Стили для попапов */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background: linear-gradient(135deg, rgba(245, 240, 255, 0.95), rgba(230, 220, 255, 0.95));
+  border-radius: 12px;
+  padding: 0;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(220, 190, 255, 0.8);
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(220, 190, 255, 0.5);
+  background: rgba(220, 190, 255, 0.1);
+  
+  h3 {
+    margin: 0;
+    color: #5a4a6d;
+    font-size: 20px;
+  }
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #5a4a6d;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  
+  &:hover {
+    background-color: rgba(220, 190, 255, 0.3);
+  }
+}
+
+.popup-body {
+  padding: 24px;
+  
+  p {
+    margin: 0 0 16px 0;
+    color: #5a4a6d;
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  
+  .warning-text {
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 14px;
+  }
+}
+
+.surrender-actions,
+.pause-actions,
+.draw-actions,
+.draw-response-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  
+  .btn {
+    min-width: 120px;
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .fields-container {
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+  }
+  
+  .game-controls {
+    flex-direction: column;
+    gap: 20px;
+    margin: 0 20px;
+  }
+  
+  .controls-left,
+  .controls-center,
+  .controls-right {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .controls-center {
+    order: -1; // Перемещаем статус наверх в мобильной версии
+  }
+  
+  .shots-info {
+    gap: 30px;
+    
+    .shot-stat {
+      .value {
+        font-size: 20px;
+      }
+    }
+  }
+  
+  .action-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
+  .corner,
+  .coordinate,
+  .cell {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .coordinate {
+    font-size: 12px;
+  }
+  
+  .hit-mark,
+  .miss-mark {
+    font-size: 14px !important;
+  }
+  
+  .surrender-actions,
+  .pause-actions,
+  .draw-actions,
+  .draw-response-actions {
+    flex-direction: column;
+    
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .game-container {
+    padding: 20px 10px;
+  }
+  
+  .corner,
+  .coordinate,
+  .cell {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .coordinate {
+    font-size: 10px;
+  }
+  
+  .field-section h3 {
+    font-size: 20px;
+  }
+  
+  .ships-count {
+    font-size: 14px;
+  }
+  
+  .fields-container {
+    gap: 20px;
+  }
+  
+  .popup-content {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .shots-info {
+    gap: 20px;
+  }
+  
+  .turn-status {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+}
