@@ -4,131 +4,294 @@
     <p class="subtitle">Расстановка кораблей</p>
   </header>
 
+  <!-- Индикатор загрузки -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <p>Генерация расстановки...</p>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
   <div class="game-setup">
     <div class="setup-options">
       <h2>Способ расстановки</h2>
 
       <div class="strategy-options">
-        <div class="strategy-option active" data-strategy="manual">
-          <input type="radio" id="manual" name="strategy" checked>
+        <!-- Ручная расстановка -->
+        <div class="strategy-option" [class.active]="selectedStrategy === 'manual'">
+          <input type="radio" id="manual" name="strategy" value="manual"
+                 [checked]="selectedStrategy === 'manual'"
+                 (change)="onStrategyChange($event)">
           <label for="manual">Ручная расстановка</label>
         </div>
         <p class="strategy-info">Разместите корабли самостоятельно на игровом поле</p>
 
-        <div class="strategy-option" data-strategy="random">
-          <input type="radio" id="random" name="strategy">
+        <!-- Автоматические стратегии -->
+        <div class="strategy-option" [class.active]="selectedStrategy === 'random'">
+          <input type="radio" id="random" name="strategy" value="random"
+                 (change)="onStrategyChange($event)">
           <label for="random">Случайная расстановка</label>
         </div>
         <p class="strategy-info">Корабли будут размещены случайным образом</p>
 
-        <div class="strategy-option" data-strategy="coastal">
-          <input type="radio" id="coastal" name="strategy">
+        <div class="strategy-option" [class.active]="selectedStrategy === 'coastal'">
+          <input type="radio" id="coastal" name="strategy" value="coastal"
+                 (change)="onStrategyChange($event)">
           <label for="coastal">Береговая стратегия</label>
         </div>
         <p class="strategy-info">Корабли размещаются вдоль границ поля</p>
 
-        <div class="strategy-option" data-strategy="diagonal">
-          <input type="radio" id="diagonal" name="strategy">
+        <div class="strategy-option" [class.active]="selectedStrategy === 'diagonal'">
+          <input type="radio" id="diagonal" name="strategy" value="diagonal"
+                 (change)="onStrategyChange($event)">
           <label for="diagonal">Диагональная стратегия</label>
         </div>
         <p class="strategy-info">Корабли избегают главных диагоналей поля</p>
 
-        <div class="strategy-option" data-strategy="half-field">
-          <input type="radio" id="half-field" name="strategy">
+        <div class="strategy-option" [class.active]="selectedStrategy === 'halfField'">
+          <input type="radio" id="half-field" name="strategy" value="halfField"
+                 (change)="onStrategyChange($event)">
           <label for="half-field">Полупольная стратегия</label>
         </div>
         <p class="strategy-info">Корабли концентрируются в одной половине поля</p>
       </div>
 
-      <div class="ship-selection">
+      <!-- Блок выбора корабля (только для ручной расстановки) -->
+      <div class="ship-selection" *ngIf="selectedStrategy === 'manual'">
         <h3>Выбор корабля</h3>
         <div class="ship-list">
-          <div class="ship-item active" data-size="4">
+          <div class="ship-item"
+               [class.active]="selectedShipSize === 4"
+               [class.placed]="getRemainingShipsCount('battleship') === 0"
+               (click)="selectShip(4)">
             <span>Линкор (4)</span>
             <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
+              <div class="ship-cell" *ngFor="let cell of [1,2,3,4]"></div>
             </div>
+            <span class="ship-count">Осталось: {{ getRemainingShipsCount('battleship') }}</span>
           </div>
-          <div class="ship-item" data-size="3">
+
+          <div class="ship-item"
+               [class.active]="selectedShipSize === 3"
+               [class.placed]="getRemainingShipsCount('cruiser') === 0"
+               (click)="selectShip(3)">
             <span>Крейсер (3)</span>
             <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
+              <div class="ship-cell" *ngFor="let cell of [1,2,3]"></div>
             </div>
+            <span class="ship-count">Осталось: {{ getRemainingShipsCount('cruiser') }}</span>
           </div>
-          <div class="ship-item" data-size="2">
+
+          <div class="ship-item"
+               [class.active]="selectedShipSize === 2"
+               [class.placed]="getRemainingShipsCount('destroyer') === 0"
+               (click)="selectShip(2)">
             <span>Эсминец (2)</span>
             <div class="ship-preview">
-              <div class="ship-cell"></div>
-              <div class="ship-cell"></div>
+              <div class="ship-cell" *ngFor="let cell of [1,2]"></div>
             </div>
+            <span class="ship-count">Осталось: {{ getRemainingShipsCount('destroyer') }}</span>
           </div>
-          <div class="ship-item" data-size="1">
+
+          <div class="ship-item"
+               [class.active]="selectedShipSize === 1"
+               [class.placed]="getRemainingShipsCount('boat') === 0"
+               (click)="selectShip(1)">
             <span>Катер (1)</span>
             <div class="ship-preview">
               <div class="ship-cell"></div>
             </div>
+            <span class="ship-count">Осталось: {{ getRemainingShipsCount('boat') }}</span>
           </div>
         </div>
       </div>
 
-      <div class="orientation-toggle">
-        <div class="orientation-btn active" data-orientation="horizontal">
+      <!-- Переключение ориентации (только для ручной расстановки) -->
+      <div class="orientation-toggle" *ngIf="selectedStrategy === 'manual'">
+        <div class="orientation-btn"
+             [class.active]="isHorizontal"
+             (click)="toggleOrientation()">
           Горизонтально
         </div>
-        <div class="orientation-btn" data-orientation="vertical">
+        <div class="orientation-btn"
+             [class.active]="!isHorizontal"
+             (click)="toggleOrientation()">
           Вертикально
         </div>
       </div>
 
+      <!-- Кнопки действий -->
       <div class="action-buttons">
-        <button class="btn btn-primary" id="autoPlaceBtn">Авторасстановка</button>
-        <button class="btn btn-secondary" id="clearBtn">Очистить поле</button>
-        <button class="btn btn-success" id="startGameBtn" disabled>Начать игру</button>
+        <button class="btn btn-primary"
+                (click)="onAutoPlace()"
+                [disabled]="isLoading">
+          {{ getAutoPlaceButtonText() }}
+        </button>
+
+        <button class="btn btn-secondary"
+                (click)="requestClearBoard()"
+                [disabled]="!hasAtLeastOneShip()">
+          Очистить поле
+        </button>
+
+        <button class="btn btn-success"
+                (click)="startGame()"
+                [disabled]="!isAllShipsPlaced() || isLoading">
+          Начать игру
+        </button>
+
+        <!-- Дополнительные кнопки -->
+        <button class="btn btn-outline"
+                (click)="openSavePopup()"
+                [disabled]="!hasAtLeastOneShip()">
+          Сохранить расстановку
+        </button>
+
+        <button class="btn btn-outline"
+                (click)="openLoadPopup()">
+          Загрузить расстановку
+        </button>
       </div>
     </div>
 
+    <!-- Игровое поле -->
     <div class="game-board">
       <h2>Ваше поле</h2>
       <div class="board-container">
-        <div class="board" id="playerBoard">
-          <!-- Игровое поле будет сгенерировано JavaScript -->
+        <div class="board" id="playerBoard"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+
+          <!-- Заголовки столбцов -->
+          <div class="board-corner"></div>
+          <div class="column-header" *ngFor="let col of columns">
+            {{ col }}
+          </div>
+
+          <!-- Строки поля -->
+          <div class="board-row" *ngFor="let row of rows; let rowIndex = index">
+            <!-- Заголовок строки -->
+            <div class="row-header">{{ row }}</div>
+
+            <!-- Ячейки поля -->
+            <div class="cell"
+                 *ngFor="let col of columns"
+                 [attr.data-row]="row"
+                 [attr.data-col]="col"
+                 [class.has-ship]="hasShip(row, col)"
+                 [class.ship-placement-valid]="isValidDropZone(row, col)"
+                 [class.ship-placement-invalid]="isInvalidDropZone(row, col)"
+                 [class.hovered]="isCellHovered(row, col)"
+                 draggable="false"
+                 (click)="onCellClick(row, col)">
+              <!-- Отображение корабля -->
+              <div class="ship-cell" *ngIf="hasShip(row, col)"></div>
+
+              <!-- Визуализация потенциального размещения -->
+              <div class="placement-preview"
+                   *ngIf="isValidDropZone(row, col) || isInvalidDropZone(row, col)"></div>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Счетчики кораблей -->
       <div class="ship-counter">
-        <div class="ship-count">
+        <div class="ship-count" [class.completed]="getRemainingShipsCount('battleship') === 0">
           <span>Линкоры (4):</span>
-          <span id="battleshipCount">1</span>
+          <span>{{ getRemainingShipsCount('battleship') }}/1</span>
         </div>
-        <div class="ship-count">
+        <div class="ship-count" [class.completed]="getRemainingShipsCount('cruiser') === 0">
           <span>Крейсеры (3):</span>
-          <span id="cruiserCount">2</span>
+          <span>{{ getRemainingShipsCount('cruiser') }}/2</span>
         </div>
-        <div class="ship-count">
+        <div class="ship-count" [class.completed]="getRemainingShipsCount('destroyer') === 0">
           <span>Эсминцы (2):</span>
-          <span id="destroyerCount">3</span>
+          <span>{{ getRemainingShipsCount('destroyer') }}/3</span>
         </div>
-        <div class="ship-count">
+        <div class="ship-count" [class.completed]="getRemainingShipsCount('boat') === 0">
           <span>Катера (1):</span>
-          <span id="boatCount">4</span>
+          <span>{{ getRemainingShipsCount('boat') }}/4</span>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Инструкция -->
   <div class="instructions">
     <h3>Инструкция по расстановке</h3>
     <ul>
-      <li>Выберите корабль из списка и ориентацию (горизонтальную или вертикальную)</li>
-      <li>Кликните на поле, чтобы разместить корабль</li>
+      <li *ngIf="selectedStrategy === 'manual'">
+        Выберите корабль из списка и ориентацию (горизонтальную или вертикальную)
+      </li>
+      <li *ngIf="selectedStrategy === 'manual'">
+        Кликните на поле, чтобы разместить корабль
+      </li>
       <li>Корабли не могут соприкасаться друг с другом (даже по диагонали)</li>
       <li>Используйте кнопку "Авторасстановка" для автоматического размещения всех кораблей</li>
       <li>Нажмите "Начать игру", когда все корабли будут расставлены</li>
     </ul>
+  </div>
+
+  <!-- Попап сохранения -->
+  <div class="popup-overlay" *ngIf="showSavePopup">
+    <div class="popup-content">
+      <h3>Сохранить расстановку</h3>
+      <div class="form-group">
+        <label for="placementName">Название расстановки:</label>
+        <input type="text" id="placementName"
+               [(ngModel)]="newPlacementName"
+               placeholder="Введите название"
+               maxlength="50">
+      </div>
+      <div class="popup-actions">
+        <button class="btn btn-primary"
+                (click)="savePlacement()"
+                [disabled]="!newPlacementName.trim()">
+          Сохранить
+        </button>
+        <button class="btn btn-secondary" (click)="closeSavePopup()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап загрузки -->
+  <div class="popup-overlay" *ngIf="showLoadPopup">
+    <div class="popup-content">
+      <h3>Загрузить расстановку</h3>
+      <div class="placements-list">
+        <div *ngFor="let placement of userPlacements"
+             class="placement-item"
+             (click)="loadUserPlacement(placement)">
+          <div class="placement-info">
+            <span class="placement-name">{{ placement.name }}</span>
+            <span class="placement-date">{{ placement.date | date:'dd.MM.yyyy HH:mm' }}</span>
+          </div>
+          <button class="btn btn-sm btn-outline"
+                  (click)="$event.stopPropagation(); deletePlacement(placement)">
+            Удалить
+          </button>
+        </div>
+        <div *ngIf="userPlacements.length === 0" class="no-placements">
+          Нет сохраненных расстановок
+        </div>
+      </div>
+      <div class="popup-actions">
+        <button class="btn btn-secondary" (click)="closeLoadPopup()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Подтверждение очистки -->
+  <div class="popup-overlay" *ngIf="showClearConfirmation">
+    <div class="popup-content">
+      <h3>Очистить поле?</h3>
+      <p>Вы уверены, что хотите очистить поле? Все расставленные корабли будут удалены.</p>
+      <div class="popup-actions">
+        <button class="btn btn-danger" (click)="confirmClear()">Очистить</button>
+        <button class="btn btn-secondary" (click)="cancelClear()">Отмена</button>
+      </div>
+    </div>
   </div>
 </div>
