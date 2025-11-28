@@ -3,6 +3,14 @@
     <a routerLink="/lobby" class="lobby-button">Вернуться в лобби</a>
     
     <div class="multiplayer-card">
+        <!-- Заголовок и кнопка обновления - всегда видны -->
+        <div class="card-header">
+            <h2 class="card-title">Выберите игрока</h2>
+            <button class="refresh-btn" (click)="refreshPlayers()" [disabled]="loading">
+                ↻
+            </button>
+        </div>
+
         <!-- Сообщение об ошибке -->
         @if(error) {
             <div class="error-message">
@@ -25,10 +33,6 @@
         }
 
         <div class="players-table" *ngIf="players.length > 0">
-            <div class="table-header">
-                <span class="header-player">Выберите игрока</span>
-            </div>
-            
             <ul class="players-list">
                 <li class="player-row" *ngFor="let player of paginatedPlayers">
                     <div class="player-option" 

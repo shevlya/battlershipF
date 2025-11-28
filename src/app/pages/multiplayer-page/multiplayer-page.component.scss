@@ -49,24 +49,76 @@
     max-height: none;
 }
 
+// Стили для заголовка карточки с кнопкой обновления
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+}
+
+.card-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: white;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+// Стили для кнопки обновления - поднята выше
+.refresh-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.3em;
+    backdrop-filter: blur(4px);
+    position: absolute;
+    right: 0;
+    top: -1;
+    transform: translateY(0);
+
+    &:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1) rotate(90deg); //без translateY
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    // Анимация вращения при загрузке
+    &.loading {
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .players-table {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     padding: 15px;
     overflow: visible;
-}
-
-.table-header {
-    padding: 0 15px 15px 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    font-weight: bold;
-    font-size: 1.1em;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.header-player {
-    text-align: center;
 }
 
 .players-list {
@@ -333,10 +385,20 @@
         padding: 15px;
     }
     
-    .table-header {
-        padding: 0 10px 15px 10px;
-        font-size: 1em;
-        margin-bottom: 10px;
+    .card-header {
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+    }
+    
+    .card-title {
+        font-size: 1.2em;
+    }
+    
+    .refresh-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 1.2em;
+        top: 0; // Сохраняем позицию для мобильных
     }
     
     .player-option {
@@ -419,6 +481,22 @@
         left: 10px;
         padding: 8px 16px;
         font-size: 0.9em;
+    }
+
+    .card-header {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+
+    .card-title {
+        font-size: 1.1em;
+    }
+
+    .refresh-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1em;
+        top: 0; // Сохраняем позицию для очень маленьких экранов
     }
 
     .invite-btn {

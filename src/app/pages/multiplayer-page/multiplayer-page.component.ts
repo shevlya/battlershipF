@@ -69,14 +69,9 @@ export class MultiplayerPageComponent implements OnInit {
     this.loadCurrentUserData();
   }
 
-  /**
-   * Загрузка данных текущего пользователя с сервера
-   * Аналогично методу из профиля, но получаем только нужные данные
-   */
   loadCurrentUserData() {
     this.loading = true;
     
-    // Получение токена аутентификации
     const token = this.authService.getToken();
     if (!token) {
       console.warn('Токен аутентификации не найден');
@@ -84,19 +79,14 @@ export class MultiplayerPageComponent implements OnInit {
       return;
     }
 
-    // Настройка заголовков с токеном авторизации
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
 
-    /**
-     * Запрос актуальных данных пользователя с сервера
-     */
     this.http.get<any>(`${environment.apiUrl}/api/players/current`, { headers }).subscribe({
       next: (userData) => {
         console.log('Данные пользователя с сервера (мультиплеер):', userData);
         
-        // Преобразование данных сервера в структуру компонента
         this.currentPlayer = {
           player_id: userData.playerId,
           nickname: userData.nickname,
@@ -107,24 +97,14 @@ export class MultiplayerPageComponent implements OnInit {
           savedLayouts: userData.savedLayouts || 0
         };
         
-        // Синхронизация данных с сервисом аутентификации
         this.authService.updateUser(this.currentPlayer);
-        
-        // После загрузки данных пользователя загружаем список игроков
-        this.loadPlayers();
+        this.loadPlayers(); // Вызов остается только здесь
       },
       error: (error) => {
         console.error('Ошибка загрузки данных пользователя (мультиплеер):', error);
-        
-        /**
-         * Fallback механизм:
-         * При ошибке загрузки с сервера используем данные из AuthService
-         */
         this.currentPlayer = this.authService.getCurrentUser();
         console.log('Используем данные из AuthService:', this.currentPlayer);
-        
-        // Все равно загружаем список игроков
-        this.loadPlayers();
+        this.loadPlayers(); // И здесь
       }
     });
   }
@@ -195,6 +175,23 @@ export class MultiplayerPageComponent implements OnInit {
     } else {
       console.error('Выбранный игрок не найден в списке');
     }
+  }
+
+    /**
+   * Обновление списка игроков
+   * Перезагружает данные текущего пользователя и список всех игроков
+   */
+  refreshPlayers() {
+    console.log('Обновление списка игроков...');
+    this.loading = true;
+    this.selectedPlayerId = null;
+    this.error = '';
+    
+    // Сброс текущей страницы пагинации
+    this.currentPage = 1;
+    
+    // Перезагрузка данных
+    this.loadCurrentUserData();
   }
 
   // ==================== МЕТОДЫ ПАГИНАЦИИ ====================
