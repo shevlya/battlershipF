@@ -179,8 +179,8 @@ export class AcceptGameComponent implements OnInit, OnDestroy {
       next: () => {
         console.log('Приглашение принято');
         
-        // Переход на страницу расстановки кораблей или игры
-        this.router.navigate(['/game-setup'], { 
+        // Переход на страницу расстановки кораблей
+        this.router.navigate(['/placement'], { 
           queryParams: { 
             opponentId: this.invitation?.inviter.id 
           } 

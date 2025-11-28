@@ -14,6 +14,7 @@ import { ProfilePageComponent } from './pages/profile-page/profile-page.componen
 import { ChangeAvatarPageComponent } from './pages/change-avatar-page/change-avatar-page.component';
 import { ChangePasswordPageComponent } from './pages/change-password-page/change-password-page.component';
 import { PlacementUserPageComponent } from './pages/placement-user-page/placement-user-page.component';
+import { TwoPlayersFieldComponent } from './pages/two-players-field-page/two-players-field-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent }, // Главная страница
@@ -28,8 +29,9 @@ export const routes: Routes = [
   { path: 'lose', component: LosePageComponent },
   { path: 'ai-game', component: AiGamePageComponent},
   { path: 'profile', component: ProfilePageComponent}, 
-  {path: 'change-avatar', component: ChangeAvatarPageComponent},
+  { path: 'change-avatar', component: ChangeAvatarPageComponent},
   { path: 'change-password', component: ChangePasswordPageComponent},
   { path: 'placement', component: PlacementUserPageComponent},
+  { path: 'two-players-field', component: TwoPlayersFieldComponent},
   { path: '**', redirectTo: '' }
 ];

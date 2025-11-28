@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 /**
@@ -127,7 +128,7 @@ export class PlacementUserPageComponent {
     return 'unknown_user';
   }
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   /**
    * Инициализация компонента
@@ -215,6 +216,7 @@ export class PlacementUserPageComponent {
       console.log('Начало игры');
       const serverFormat = this.convertToServerFormat();
       console.log('Данные для сервера:', serverFormat);
+      this.router.navigate(['/two-players-field']);
       // TODO: Добавить отправку данных на сервер и переход к игре (на F12 можно глянуть, что сейчас "сохраняется" с целью отправки, картинка в README на всякий)
     } else {
       alert('Разместите все корабли перед началом игры!');
