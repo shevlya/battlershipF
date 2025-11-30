@@ -3,7 +3,7 @@
 <div class="accept-container">
     <div class="accept-card">
         <h2>Приглашение в игру</h2>
-        
+
         <!-- Загрузка -->
         <div *ngIf="isLoading" class="loading">
             <p>Загрузка приглашения...</p>
@@ -19,12 +19,13 @@
         <div *ngIf="!isLoading && !errorMessage && invitation" class="invitation-content">
             <div class="player-info">
                 <div class="player-avatar">
-                    <img [src]="invitation.inviter.avatar" 
-                         [alt]="invitation.inviter.username" 
-                         class="avatar-image"
-                         (error)="handleImageError($event)">
+                  <img [src]="getAvatarPath(invitation.inviterAvatarUrl)"
+                       [alt]="invitation.inviterNickname"
+                       class="avatar-image"
+                       (error)="handleImageError($event)">
+
                 </div>
-                <p class="player-name">{{ invitation.inviter.username }}</p>
+                <p class="player-name">{{ invitation.inviterNickname }}</p>
                 <p class="invite-text">приглашает вас в игру</p>
             </div>
 
