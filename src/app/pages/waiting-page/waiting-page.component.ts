@@ -1,20 +1,24 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute  } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
+import {
+  WebSocketService,
+  GameStartNotification
+} from '../../services/webSocket.service';
+import { AuthService } from '../../services/auth.service';
 /**
  * Компонент страницы ожидания подключения противника
- * 
+ *
  * Основные функции:
  * - Ожидание подтверждения игры от приглашенного противника
  * - Отсчет времени с автоматическим завершением при превышении лимита
  * - Визуальное отображение процесса ожидания
  * - Обработка отмены ожидания пользователем
  * - Навигация к игре при успешном подключении противника
- * 
+ *
  * @component
  * @selector app-waiting-page
- * 
+ *
  * Особенности:
  * - Множественные таймеры для разных аспектов ожидания
  * - Автоматическая очистка ресурсов при уничтожении компонента
@@ -42,7 +46,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
    * Таймер для автоматического завершения ожидания по таймауту
    */
   private timeoutTimer: any;
-  
+
   /**
    * Общее время ожидания в секундах
    * Увеличивается каждую секунду для отображения прогресса
@@ -66,7 +70,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
    * Получается из query параметров навигации
    */
   opponentName: string | null = null;
-
+  private wsSubscriptionsInitialized = false;
   /**
    * Флаг истечения времени ожидания
    * Устанавливается true при достижении maxWaitTime
@@ -77,7 +81,10 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
    * Конструктор компонента
    * @param router - Сервис маршрутизации для навигации между страницами
    */
-  constructor(private router: Router) {
+  constructor( private router: Router,
+               private route: ActivatedRoute,
+               private ws: WebSocketService,
+               private authService: AuthService) {
     // Получаем имя оппонента из query параметров навигации
     const navigation = this.router.getCurrentNavigation();
     this.opponentName = navigation?.extras?.queryParams?.['opponent'] || null;
@@ -88,20 +95,73 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
    * Запускает все необходимые таймеры и процессы ожидания
    */
   ngOnInit() {
-    // Запускаем таймер для отсчета времени ожидания (обновление каждую секунду)
+    // просто визуальный таймер
     this.timer = setInterval(() => {
       this.waitingTime++;
       this.checkTimeout();
     }, 1000);
 
-    // Запускаем таймаут на максимальное время ожидания
     this.timeoutTimer = setTimeout(() => {
       this.handleTimeout();
     }, this.maxWaitTime * 1000);
 
-    // Запускаем периодическую проверку подключения соперника
-    this.startWaitingCheck();
+    // === КЛЮЧЕВОЕ: подписки на WebSocket для инициатора ===
+    const user = this.authService.getCurrentUser();
+    const playerId = Number(user?.player_id);
+
+    if (!playerId) {
+      console.warn('WaitingPage: не удалось получить player_id, отправляем на логин');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const initSubscriptions = () => {
+      if (this.wsSubscriptionsInitialized) return;
+      this.wsSubscriptionsInitialized = true;
+
+      // 1) игра принята — уведомление получают ОБА игрока
+      this.ws.subscribeToGameStart((game: GameStartNotification) => {
+        console.log('WaitingPage: игра начинается', game);
+        this.clearAllTimers();
+
+        this.router.navigate(['/placement'], {
+          queryParams: {
+            opponentId: game.opponentId,
+            opponentNickname: game.opponentNickname
+          }
+        });
+      });
+
+      // 2) приглашение отклонено — это видит только инициатор
+      this.ws.subscribeToRejection((game: GameStartNotification) => {
+        console.log('WaitingPage: приглашение отклонено', game);
+        this.clearAllTimers();
+
+        this.router.navigate(['/multiplayer'], {
+          queryParams: { inviteRejected: true }
+        });
+      });
+    };
+
+    // если WS ещё не подключен — подключаем и потом вешаем подписки
+    if (!this.ws.isConnected()) {
+      this.ws.connect(playerId)
+        .then(() => {
+          console.log('WaitingPage: WebSocket подключен');
+          initSubscriptions();
+        })
+        .catch(err => {
+          console.error('WaitingPage: не удалось подключиться к WebSocket', err);
+          // на всякий случай вернём игрока назад
+          this.handleTimeout();
+        });
+    } else {
+      // уже подключены — только вешаем подписки
+      initSubscriptions();
+    }
   }
+
+
 
   /**
    * Метод очистки ресурсов компонента (освобождение всех таймеров при уничтожении компонента)
@@ -144,7 +204,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     console.log('Время ожидания истекло');
     this.timeExpired = true;
     this.clearAllTimers();
-    
+
     // Показываем сообщение об истечении времени в течение 2 секунд
     setTimeout(() => {
       this.router.navigate(['/multiplayer'], {
@@ -153,50 +213,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     }, 2000);
   }
 
-  /**
-   * Запуск периодической проверки подключения противника
-   * В текущей реализации используется mock-логика (реальных пока нет)
-   * TODO: Заменить на реальные API запросы или WebSocket соединение
-   */
-  startWaitingCheck() {
-    // Mock: проверка подключения каждые 3 секунды
-    this.checkInterval = setInterval(() => {
-      this.checkOpponentConnection();
-    }, 3000);
-  }
-
-  /**
-   * Проверка подключения противника
-   * В текущей реализации эмулирует случайное время подключения
-   * TODO: Интегрировать с реальной системой уведомлений о подключении?
-   */
-  checkOpponentConnection() {
-    // TODO: Заменить на реальный API запрос или WebSocket
-    console.log('Проверка подключения соперника...');
-    
-    // Mock: через случайное время "находим" соперника
-    // В реальном приложении это будет приходить от сервера
-    const randomTime = Math.random() * 10000 + 5000; // 5-15 секунд
-    setTimeout(() => {
-      // TODO: Раскомментировать когда будет готов бэкенд
-      // this.opponentFound();
-    }, randomTime);
-  }
-
-  /**
-   * Обработчик успешного подключения противника
-   * Выполняет очистку таймеров и навигацию к игровому процессу
-   * TODO: Реализовать переход на реальную игровую сессию
-   */
-  opponentFound() {
-    console.log('Соперник найден! Начинаем игру...');
-    this.clearAllTimers();
-    
-    // TODO: Переход на страницу игры когда соперник найден
-    // this.router.navigate(['/game'], {
-    //   queryParams: { opponent: this.opponentName }
-    // });
-  }
 
   /**
    * Метод отмены ожидания по инициативе пользователя
@@ -205,7 +221,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
   cancelWaiting() {
     console.log('Ожидание отменено');
     this.clearAllTimers();
-    
+
     // Возвращаемся в меню мультиплеера
     this.router.navigate(['/multiplayer']);
   }
