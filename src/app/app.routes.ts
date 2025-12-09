@@ -28,10 +28,11 @@ export const routes: Routes = [
   { path: 'win', component: WinPageComponent},
   { path: 'lose', component: LosePageComponent },
   { path: 'ai-game', component: AiGamePageComponent},
-  { path: 'profile', component: ProfilePageComponent}, 
+  { path: 'profile', component: ProfilePageComponent},
   { path: 'change-avatar', component: ChangeAvatarPageComponent},
   { path: 'change-password', component: ChangePasswordPageComponent},
   { path: 'placement', component: PlacementUserPageComponent},
   { path: 'two-players-field', component: TwoPlayersFieldComponent},
+  { path: 'two-players-field/:gameId', component: TwoPlayersFieldComponent },
   { path: '**', redirectTo: '' }
 ];
