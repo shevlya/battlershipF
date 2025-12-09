@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 interface GameState {
   myField: number[][];
@@ -18,11 +19,13 @@ interface GameState {
   standalone: true,
   imports: [CommonModule]
 })
-export class TwoPlayersFieldComponent implements OnChanges {
-  @Input() gameId: string = '000236';
+export class TwoPlayersFieldComponent implements OnChanges, OnInit {
+  // Убираем статическое значение и делаем динамическим
+  gameId: string = '';  // Теперь не @Input(), а локальная переменная
+
   @Input() myName: string = '';
   @Input() opponentName: string = '';
-  
+
   // Инициализируем пустыми значениями, они будут обновляться через @Input()
   @Input() gameState: GameState = {
     myField: [],
@@ -45,10 +48,42 @@ export class TwoPlayersFieldComponent implements OnChanges {
   showDrawPopup = false;
   showDrawResponsePopup = false;
   showSurrenderPopup = false;
-  
+
   // Статистика выстрелов
   myShotsCount = 0;
   myHitsCount = 0;
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    // Получаем gameId из параметров маршрута
+    this.route.params.subscribe(params => {
+      if (params['gameId']) {
+        this.gameId = params['gameId'];
+        console.log('Получен ID игры:', this.gameId);
+      } else {
+        // Если ID игры не передан, пробуем получить из queryParams или snapshot
+        this.route.queryParams.subscribe(queryParams => {
+          if (queryParams['gameId']) {
+            this.gameId = queryParams['gameId'];
+          } else {
+            // Получаем из snapshot на всякий случай
+            const snapshotId = this.route.snapshot.paramMap.get('gameId');
+            if (snapshotId) {
+              this.gameId = snapshotId;
+            }
+          }
+        });
+      }
+    });
+
+    // Также проверяем snapshot на случай быстрой навигации
+    const snapshotId = this.route.snapshot.paramMap.get('gameId');
+    if (snapshotId && !this.gameId) {
+      this.gameId = snapshotId;
+      console.log('Получен ID игры из snapshot:', this.gameId);
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['gameState']) {
@@ -69,32 +104,32 @@ export class TwoPlayersFieldComponent implements OnChanges {
   }
 
   get myField(): number[][] {
-    return this.gameState?.myField && this.gameState.myField.length ? 
-           this.gameState.myField : this.createEmptyField();
+    return this.gameState?.myField && this.gameState.myField.length ?
+      this.gameState.myField : this.createEmptyField();
   }
 
   get opponentField(): number[][] {
-    return this.gameState?.opponentField && this.gameState.opponentField.length ? 
-           this.gameState.opponentField : this.createEmptyField();
+    return this.gameState?.opponentField && this.gameState.opponentField.length ?
+      this.gameState.opponentField : this.createEmptyField();
   }
 
   get myHits(): boolean[][] {
-    return this.gameState?.myHits && this.gameState.myHits.length ? 
-           this.gameState.myHits : this.createEmptyHitsField();
+    return this.gameState?.myHits && this.gameState.myHits.length ?
+      this.gameState.myHits : this.createEmptyHitsField();
   }
 
   get opponentHits(): boolean[][] {
-    return this.gameState?.opponentHits && this.gameState.opponentHits.length ? 
-           this.gameState.opponentHits : this.createEmptyHitsField();
+    return this.gameState?.opponentHits && this.gameState.opponentHits.length ?
+      this.gameState.opponentHits : this.createEmptyHitsField();
   }
 
   /**
    * Обработка клика по клетке поля противника
    */
   onOpponentCellClick(row: number, col: number): void {
-    if (!this.isYourTurn || 
-        !this.opponentHits[row] || 
-        this.opponentHits[row][col]) {
+    if (!this.isYourTurn ||
+      !this.opponentHits[row] ||
+      this.opponentHits[row][col]) {
       return; // Не ваш ход или уже стреляли в эту клетку
     }
 
@@ -107,7 +142,7 @@ export class TwoPlayersFieldComponent implements OnChanges {
   isShipSunk(row: number, col: number, isMyField: boolean): boolean {
     const field = isMyField ? this.myField : this.opponentField;
     const hits = isMyField ? this.myHits : this.opponentHits;
-    
+
     if (!field[row] || field[row][col] !== 1 || !hits[row] || !hits[row][col]) {
       return false;
     }
