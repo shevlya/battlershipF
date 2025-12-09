@@ -24,13 +24,32 @@ export interface GameStartNotification {
   opponentId: number | null;
   opponentNickname: string;
   opponentAvatarUrl: string | null;
+  currentTurnPlayerId?: number | null;
 }
 
 export interface GameDecisionRequest {
   inviterId: number;
   opponentId: number;
 }
+interface ShipPlacement {
+  shipId: number;
+  size: number;
+  row: number;
+  col: number;
+  vertical: boolean;
+}
 
+export interface BoardLayoutDTO {
+  ships: ShipPlacement[];
+  matrix: string[][];  // Character[][] в Java эквивалентен string[][] в TypeScript
+}
+
+export interface GameReadyMessage {
+  playerId: number;
+  opponentId: number;
+  boardLayout: BoardLayoutDTO;
+  gameType: string;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -65,6 +84,9 @@ export class WebSocketService {
             reject(error);
           }
         );
+
+
+
       } catch (e) {
         console.error('WS: setup error:', e);
         reject(e);
@@ -145,7 +167,49 @@ export class WebSocketService {
     }
   }
 
+  sendPlayerReady(message: GameReadyMessage) {
+    try {
+      if (!this.ensureConnected()) return;
+      const payload = JSON.stringify(message);
+      console.log('WS: sending player ready message', payload);
+      this.stompClient!.send(
+        '/app/game.ready',
+        payload,
+        { 'content-type': 'application/json' }
+      );
+    } catch (e) {
+      console.error('Failed to send player ready message:', e);
+    }
+  }
   // ============== ПОДПИСКИ ==============
+// метод для подписки на начало игры
+  subscribeToGameStartDirect(callback: (notification: GameStartNotification) => void) {
+    try {
+      if (!this.ensureConnected() || !this.currentPlayerId) {
+        console.warn('WebSocket не подключен или нет currentPlayerId. Повторная попытка через 2с...');
+        setTimeout(() => this.subscribeToGameStartDirect(callback), 2000);
+        return;
+      }
+
+      const destination = `/queue/game.start${this.currentPlayerId}`;
+      console.log('WS: subscribe to game.start direct:', destination);
+
+      this.stompClient!.subscribe(
+        destination,
+        (message: Stomp.Message) => {
+          try {
+            const body: GameStartNotification = JSON.parse(message.body);
+            console.log('WS: game.start direct received:', body);
+            callback(body);
+          } catch (e) {
+            console.error('Error parsing game start direct message:', e);
+          }
+        }
+      );
+    } catch (e) {
+      console.error('Failed to subscribe to game start direct:', e);
+    }
+  }
 
   subscribeToInvitations(callback: (inv: GameInvitationResponse) => void) {
     try {

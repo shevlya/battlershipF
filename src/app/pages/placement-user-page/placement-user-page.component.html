@@ -1,10 +1,10 @@
 <div class="placement-container">
   <h2>Ваше игровое поле</h2>
-  
+
   <div class="main-content">
     <div class="game-board-section">
-      <div class="game-board" 
-           (dragover)="onDragOver($event)" 
+      <div class="game-board"
+           (dragover)="onDragOver($event)"
            (drop)="onDrop($event)"
            (dragleave)="onDragLeave($event)">
         <div class="board-header">
@@ -13,13 +13,13 @@
             <div class="column-header">{{col}}</div>
           }
         </div>
-        
+
         @for (row of rows; track row) {
           <div class="board-row">
             <div class="row-header">{{row}}</div>
             @for (col of columns; track col) {
-              <div 
-                class="cell" 
+              <div
+                class="cell"
                 [attr.data-row]="row"
                 [attr.data-col]="col"
                 [class.has-ship]="hasShip(row, col)"
@@ -30,28 +30,40 @@
           </div>
         }
       </div>
-      
+
       <div class="action-buttons">
-        <button class="btn" 
-                (click)="openSavePopup()" 
+        <button class="btn"
+                (click)="openSavePopup()"
                 [disabled]="!hasAtLeastOneShip()">
           Сохранить расстановку
         </button>
         <button class="btn" (click)="generateRandom()">Сгенерировать случайно</button>
         <button class="btn" (click)="openLoadPopup()">Загрузить расстановку</button>
-        <button class="btn coral" 
-                (click)="requestClearBoard()" 
+        <button class="btn coral"
+                (click)="requestClearBoard()"
                 [disabled]="!hasAtLeastOneShip()">
           Очистить поле
         </button>
-        <button class="btn primary" 
-                (click)="startGame()" 
-                [disabled]="!isAllShipsPlaced()">
-          Начать игру
-        </button>
+        <div class="button-container">
+          <button
+            (click)="playerReady()"
+            [disabled]="isPlayerReady || !isAllShipsPlaced()"
+            class="ready-button"
+          >
+            {{ isPlayerReady ? 'Ожидание оппонента...' : 'Готов к игре' }}
+          </button>
+
+          <button
+            (click)="cancelReady()"
+            *ngIf="isPlayerReady"
+            class="cancel-button"
+          >
+            Отменить
+          </button>
+        </div>
       </div>
     </div>
-    
+
     <div class="sidebar">
       <div class="ships-panel">
         <h3>Корабли для расстановки:</h3>
@@ -64,11 +76,11 @@
           <div class="ship-row">
             <!-- Линкор (4 клетки) -->
             @if (getRemainingShipsCount('battleship') > 0) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="4" 
-                   data-type="battleship" 
-                   draggable="true" 
+                   data-size="4"
+                   data-type="battleship"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2,3,4]; track $index) {
@@ -76,14 +88,14 @@
                 }
               </div>
             }
-            
+
             <!-- Первый крейсер (3 клетки) -->
             @if (getRemainingShipsCount('cruiser') > 0) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="3" 
-                   data-type="cruiser" 
-                   draggable="true" 
+                   data-size="3"
+                   data-type="cruiser"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2,3]; track $index) {
@@ -92,15 +104,15 @@
               </div>
             }
           </div>
-          
+
           <div class="ship-row">
             <!-- Второй крейсер (3 клетки) -->
             @if (getRemainingShipsCount('cruiser') > 1) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="3" 
-                   data-type="cruiser" 
-                   draggable="true" 
+                   data-size="3"
+                   data-type="cruiser"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2,3]; track $index) {
@@ -108,14 +120,14 @@
                 }
               </div>
             }
-            
+
             <!-- Первый эсминец (2 клетки) -->
             @if (getRemainingShipsCount('destroyer') > 0) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="2" 
-                   data-type="destroyer" 
-                   draggable="true" 
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2]; track $index) {
@@ -124,15 +136,15 @@
               </div>
             }
           </div>
-          
+
           <div class="ship-row">
             <!-- Второй эсминец (2 клетки) -->
             @if (getRemainingShipsCount('destroyer') > 1) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="2" 
-                   data-type="destroyer" 
-                   draggable="true" 
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2]; track $index) {
@@ -140,14 +152,14 @@
                 }
               </div>
             }
-            
+
             <!-- Третий эсминец (2 клетки) -->
             @if (getRemainingShipsCount('destroyer') > 2) {
-              <div class="ship draggable" 
+              <div class="ship draggable"
                    [class.vertical]="!isHorizontal"
-                   data-size="2" 
-                   data-type="destroyer" 
-                   draggable="true" 
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 @for (i of [1,2]; track $index) {
@@ -156,52 +168,52 @@
               </div>
             }
           </div>
-          
+
           <div class="ship-row">
             <!-- Первый катер (1 клетка) -->
             @if (getRemainingShipsCount('boat') > 0) {
-              <div class="ship draggable" 
-                   data-size="1" 
-                   data-type="boat" 
-                   draggable="true" 
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 <div class="ship-cell"></div>
               </div>
             }
-            
+
             <!-- Второй катер (1 клетка) -->
             @if (getRemainingShipsCount('boat') > 1) {
-              <div class="ship draggable" 
-                   data-size="1" 
-                   data-type="boat" 
-                   draggable="true" 
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 <div class="ship-cell"></div>
               </div>
             }
           </div>
-          
+
           <div class="ship-row">
             <!-- Третий катер (1 клетка) -->
             @if (getRemainingShipsCount('boat') > 2) {
-              <div class="ship draggable" 
-                   data-size="1" 
-                   data-type="boat" 
-                   draggable="true" 
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 <div class="ship-cell"></div>
               </div>
             }
-            
+
             <!-- Четвертый катер (1 клетка) -->
             @if (getRemainingShipsCount('boat') > 3) {
-              <div class="ship draggable" 
-                   data-size="1" 
-                   data-type="boat" 
-                   draggable="true" 
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
                    (dragstart)="onDragStart($event)"
                    (dblclick)="toggleOrientation()">
                 <div class="ship-cell"></div>
@@ -222,7 +234,7 @@
         <h3>Вы уверены, что хотите очистить поле?</h3>
         <button class="popup-close" (click)="cancelClear()">&times;</button>
       </div>
-      
+
       <div class="popup-body">
         <p>Все расставленные корабли будут удалены.</p>
         <div class="clear-actions">
@@ -242,13 +254,13 @@
         <h3>Сохранить расстановку</h3>
         <button class="popup-close" (click)="closeSavePopup()">&times;</button>
       </div>
-      
+
       <div class="popup-body">
         <div class="save-form">
           <label for="placementName">Название расстановки:</label>
-          <input type="text" 
-                 id="placementName" 
-                 [(ngModel)]="newPlacementName" 
+          <input type="text"
+                 id="placementName"
+                 [(ngModel)]="newPlacementName"
                  placeholder="Введите название"
                  class="save-input"
                  (keyup.enter)="savePlacement()">
@@ -270,7 +282,7 @@
         <h3>Загрузить расстановку</h3>
         <button class="popup-close" (click)="closeLoadPopup()">&times;</button>
       </div>
-      
+
       <div class="popup-body">
         <div class="strategies-section">
           <h4>Базовые стратегии</h4>
@@ -279,12 +291,12 @@
               <span class="strategy-name">Береговая стратегия</span>
               <span class="strategy-desc">Корабли размещаются преимущественно у границ поля</span>
             </button>
-            
+
             <button class="strategy-btn" (click)="loadStrategy('diagonal')">
               <span class="strategy-name">Диагональная стратегия</span>
               <span class="strategy-desc">Корабли размещаются по диагоналям поля</span>
             </button>
-            
+
             <button class="strategy-btn" (click)="loadStrategy('halfField')">
               <span class="strategy-name">Полупольная стратегия</span>
               <span class="strategy-desc">Корабли концентрируются в одной половине поля</span>
@@ -296,7 +308,7 @@
             </button>
           </div>
         </div>
-        
+
         <div class="user-placements-section">
           <h4>Мои расстановки</h4>
           @if (userPlacements.length > 0) {
