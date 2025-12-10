@@ -175,11 +175,34 @@ export class PlacementUserPageComponent {
         this.gameId = notification.gameId;
 
         // Перенаправляем на игровое поле
-        this.router.navigate(['/two-players-field', notification.gameId]);
+        this.navigateToGamePage(notification);
       }
     });
-
   }
+
+  private navigateToGamePage(notification: GameStartNotification): void {
+    const playerId = this.currentPlayer?.player_id;
+
+    if (!playerId) {
+      console.error('Player ID не найден для навигации');
+      return;
+    }
+
+    // Подготавливаем данные для передачи
+    const queryParams = {
+      gameId: notification.gameId,
+      playerId: playerId,
+      opponentId: notification.opponentId
+    };
+
+    console.log('Переход на страницу игры с параметрами:', queryParams);
+
+    // Переход на страницу игры с передачей параметров
+    this.router.navigate(['/two-players-field', notification.gameId], {
+      queryParams: queryParams
+    });
+  }
+
   /**
    * Загрузка данных текущего пользователя из сервиса аутентификации
    */
@@ -187,7 +210,6 @@ export class PlacementUserPageComponent {
     this.currentPlayer = this.authService.getCurrentUser();
     console.log('Текущий пользователь:', this.currentPlayer);
 
-    // Добавьте проверку, что пользователь загружен
     if (!this.currentPlayer) {
       console.error('Пользователь не авторизован');
       alert('Вы не авторизованы. Пожалуйста, войдите в систему.');
@@ -195,9 +217,12 @@ export class PlacementUserPageComponent {
       return;
     }
 
+    // Сохраняем playerId сразу для использования во всем приложении
+    if (this.currentPlayer.player_id) {
+      this.savePlayerIdForNextPage(this.currentPlayer.player_id);
+    }
 
     this.loadUserPlacements();
-
   }
 
   // ==================== МЕТОДЫ УПРАВЛЕНИЯ ИГРОВЫМ ПОЛЕМ ====================
@@ -341,11 +366,14 @@ export class PlacementUserPageComponent {
       return;
     }
 
+    // Сохраняем playerId для передачи на следующую страницу
+    this.savePlayerIdForNextPage(playerId);
+
     // Конвертируем расстановку в формат для сервера
     const boardLayout = this.convertToBoardLayoutDTO();
 
     const readyMessage: GameReadyMessage = {
-      playerId: playerId, // Используем правильный ID
+      playerId: playerId,
       opponentId: this.opponentId,
       boardLayout: boardLayout,
       gameType: 'MULTIPLAYER'
@@ -354,6 +382,16 @@ export class PlacementUserPageComponent {
     console.log('Отправка сообщения о готовности:', readyMessage);
     this.webSocketService.sendPlayerReady(readyMessage);
     this.isPlayerReady = true;
+
+  }
+
+  private savePlayerIdForNextPage(playerId: number): void {
+    // Сохраняем в sessionStorage для использования на следующей странице
+    sessionStorage.setItem('currentPlayerId', playerId.toString());
+    // Также сохраняем в глобальной переменной
+    localStorage.setItem('playerId', playerId.toString());
+
+    console.log('Player ID сохранен для следующей страницы:', playerId);
   }
 
   cancelReady() {
