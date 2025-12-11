@@ -348,11 +348,31 @@
         
         <div class="clear-actions">
           <button class="btn coral" (click)="confirmCancelReady()">
-            Да, отменить
+            Да, вернусь к расстановке кораблей
           </button>
           <button class="btn" (click)="closeCancelReadyPopup()">
-            Нет, вернуться к расстановке
+            Нет, продолжу ожидать оппонента
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для отображения сообщений alert-->
+@if (showMessagePopup) {
+  <div class="popup-overlay" (click)="closeMessagePopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>{{ messageTitle }}</h3>
+        <button class="popup-close" (click)="closeMessagePopup()">&times;</button>
+      </div>
+
+      <div class="popup-body">
+        <p>{{ messageText }}</p>
+        
+        <div class="clear-actions">
+          <button class="btn" (click)="closeMessagePopup()">Хорошо</button>
         </div>
       </div>
     </div>

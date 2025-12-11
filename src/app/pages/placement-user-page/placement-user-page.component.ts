@@ -106,6 +106,11 @@ export class PlacementUserPageComponent {
   showSavePopup = false;
   showClearConfirmation = false;
   showCancelReadyPopup = false;
+  showMessagePopup = false; //для замены alert потом
+
+  /** Данные для попапа сообщения замены alert */
+  messageTitle = '';
+  messageText = '';
 
   /** Название новой сохраняемой расстановки */
   newPlacementName: string = '';
@@ -398,14 +403,42 @@ export class PlacementUserPageComponent {
   cancelReady() {
     this.showCancelReadyPopup = true;
   }
+
   /**
    * Подтверждение отмены готовности
    */
   confirmCancelReady() {
     this.isPlayerReady = false;
     this.showCancelReadyPopup = false;
+    
+    this.showMessage(
+      'Готовность отменена',
+      'Вы можете изменить расстановку кораблей. Окно может быть закрыто автоматически через 5 секунд или нажатием на кнопку'
+    );
     // Можно добавить отправку сообщения об отмене готовности на сервер
-    alert('Готовность отменена. Вы можете изменить расстановку кораблей.');
+  }
+
+  /**
+   * Показать сообщение в попапе
+   */
+  showMessage(title: string, text: string, autoClose: boolean = true) {
+    this.messageTitle = title;
+    this.messageText = text;
+    this.showMessagePopup = true;
+    if (autoClose) {
+      setTimeout(() => {
+        if (this.showMessagePopup) {
+          this.closeMessagePopup();
+        }
+      }, 5000);
+    }
+  }
+
+  /**
+   * Закрыть попап сообщения
+   */
+  closeMessagePopup() {
+    this.showMessagePopup = false;
   }
 
   /**
