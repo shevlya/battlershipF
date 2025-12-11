@@ -333,3 +333,28 @@
     </div>
   </div>
 }
+
+<!-- Попап для подтверждения отмены готовности -->
+@if (showCancelReadyPopup) {
+  <div class="popup-overlay" (click)="closeCancelReadyPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Вы уверены, что хотите отменить готовность к игре?</h3>
+        <button class="popup-close" (click)="closeCancelReadyPopup()">&times;</button>
+      </div>
+
+      <div class="popup-body">
+        <p>После отмены вы сможете изменить расстановку кораблей.</p>
+        
+        <div class="clear-actions">
+          <button class="btn coral" (click)="confirmCancelReady()">
+            Да, отменить
+          </button>
+          <button class="btn" (click)="closeCancelReadyPopup()">
+            Нет, вернуться к расстановке
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

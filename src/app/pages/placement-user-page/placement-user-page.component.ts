@@ -105,6 +105,7 @@ export class PlacementUserPageComponent {
   showLoadPopup = false;
   showSavePopup = false;
   showClearConfirmation = false;
+  showCancelReadyPopup = false;
 
   /** Название новой сохраняемой расстановки */
   newPlacementName: string = '';
@@ -395,11 +396,23 @@ export class PlacementUserPageComponent {
   }
 
   cancelReady() {
-    if (confirm('Вы уверены, что хотите отменить готовность?')) {
-      this.isPlayerReady = false;
-      // Можно добавить отправку сообщения об отмене готовности, если это поддерживается бэкендом
-      alert('Готовность отменена. Вы можете изменить расстановку кораблей.');
-    }
+    this.showCancelReadyPopup = true;
+  }
+  /**
+   * Подтверждение отмены готовности
+   */
+  confirmCancelReady() {
+    this.isPlayerReady = false;
+    this.showCancelReadyPopup = false;
+    // Можно добавить отправку сообщения об отмене готовности на сервер
+    alert('Готовность отменена. Вы можете изменить расстановку кораблей.');
+  }
+
+  /**
+   * Закрытие попапа отмены готовности без действий
+   */
+  closeCancelReadyPopup() {
+    this.showCancelReadyPopup = false;
   }
   /**
    * Обработчик перемещения корабля над игровым полем
