@@ -28,7 +28,19 @@ bootstrap подключен в main.ts
    ```typescript
    export const environment = {
     production: false,
-    apiUrl: 'http://ВАШ_IP_АДРЕС:8080'  // Укажите ваш IP
+    apiUrl: 'http://ВАШ_IP_АДРЕС:8080'  // Укажите ваш текущий IP
+   };
+
+## Для пользователей, у которых уже есть environment.ts
+
+Если у вас уже был настроен файл `src/environments/environment.ts`, то:
+
+1. **Ваш файл останется без изменений** при обновлении репозитория
+2. **Проверьте содержимое** вашего файла - он должен содержать примерно:
+   ```typescript
+   export const environment = {
+    production: false,
+    apiUrl: 'http://ВАШ_IP_АДРЕС:8080'  // Укажите ваш текущий IP
    };
 
 # На 28 ноября
