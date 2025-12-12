@@ -10,10 +10,10 @@
 .info-card {
     background-color: rgba(220, 190, 255, 0.7);
     border-radius: 15px;
-    padding: 30px;
-    max-width: 500px;
+    padding: 40px;
+    max-width: 900px;
     width: 100%;
-    text-align: center;
+    text-align: left;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(4px);
     color: white;
@@ -23,24 +23,136 @@
 
 .info-card h2 {
     font-size: 2.5rem;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     letter-spacing: 1px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 15px;
 }
 
-.info-text {
+/* Обновлённое содержание */
+.toc {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 25px;
     margin-bottom: 30px;
-    font-size: 1.05em;
+    position: relative;
+}
+
+.toc h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: white;
     text-align: center;
-    padding: 0 10px;
-    line-height: 1.6;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.toc-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toc-link {
+    display: block;
+    padding: 12px 18px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-size: 1.05em;
+    transition: all 0.3s ease;
+    border-left: 4px solid rgba(220, 190, 255, 0.5);
+}
+
+.toc-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+    color: white;
+}
+
+/* Стили для ссылки "Вернуться к содержанию" */
+.back-to-toc {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+}
+
+.back-to-toc a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-to-toc a:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Стили для списка функциональных возможностей и стратегий */
+.strategy-list {
+    margin: 25px 0;
+}
+
+.strategy-item {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-left: 4px solid rgba(220, 190, 255, 0.5);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.strategy-item:hover {
+    transform: translateX(5px);
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.strategy-item h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.2em;
+}
+
+.strategy-item p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.info-text section {
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-text section:last-of-type {
+    border-bottom: none;
+}
+
+.info-text h3 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: white;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-menu {
     display: block;
     width: 100%;
-    max-width: 200px;
-    margin: 0 auto;
-    padding: 12px 20px;
+    max-width: 250px;
+    margin: 40px auto 0;
+    padding: 15px 30px;
     background-color: rgba(220, 190, 255, 0.7);
     color: white;
     text-decoration: none;
@@ -56,26 +168,316 @@
 
 .btn-menu:hover {
     background-color: rgba(220, 190, 255, 0.8);
-    transform: scale(1.03);
+    transform: scale(1.05);
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 600px) {
+/* Адаптивность */
+@media (max-width: 900px) {
     .info-card {
-        padding: 20px;
-        max-width: 90%;
+        padding: 25px;
+        max-width: 95%;
     }
     
     .info-card h2 {
         font-size: 2rem;
     }
     
-    .info-text {
-        font-size: 0.95em;
+    .info-text h3 {
+        font-size: 1.6rem;
+    }
+    
+    .strategy-item h4 {
+        font-size: 1.1em;
     }
     
     .btn-menu {
         font-size: 1em;
-        padding: 10px 16px;
+        padding: 12px 24px;
+        max-width: 200px;
+    }
+    
+    .toc-link {
+        padding: 10px 15px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-card {
+        padding: 20px;
+    }
+    
+    .info-card h2 {
+        font-size: 1.8rem;
+    }
+    
+    .info-text h3 {
+        font-size: 1.4rem;
+    }
+    
+    .back-to-toc a {
+        font-size: 0.9em;
+        padding: 6px 15px;
+    }
+    
+    .toc-link {
+        padding: 8px 12px;
+        font-size: 0.95em;
+    }
+}
+
+/* Стили для отображения кораблей в виде сетки */
+.ships-grid {
+    margin: 25px 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.ship-card {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 20px;
+    border-top: 4px solid rgba(220, 190, 255, 0.5);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.ship-card:hover {
+    transform: translateY(-5px);
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.ship-title {
+    margin: 0 0 15px 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.ship-visual {
+    display: flex;
+    gap: 6px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.ship-cell {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, 
+        rgba(255, 182, 193, 0.9) 0%, /* Light pink */
+        rgba(255, 105, 180, 0.9) 50%, /* Hot pink */
+        rgba(219, 112, 147, 0.9) 100% /* Pale violet red */
+    );
+    border-radius: 6px;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 3px rgba(255, 255, 255, 0.4),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.ship-cell::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.2) 0%, 
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    border-radius: 6px;
+}
+
+.ship-desc {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1em;
+}
+
+/* Адаптивность для кораблей */
+@media (max-width: 992px) {
+    .ships-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .ships-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .ship-cell {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .ship-title {
+        font-size: 1.2em;
+    }
+    
+    .ship-desc {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .ships-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .ship-cell {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .ship-title {
+        font-size: 1.3em;
+    }
+    
+    .ship-desc {
+        font-size: 1em;
+    }
+}
+
+/* Стили для режимов игры - ОБНОВЛЁННЫЕ */
+.game-mode-section {
+    margin-bottom: 35px;
+    padding: 25px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border-left: 4px solid rgba(220, 190, 255, 0.5);
+}
+
+.game-mode-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.4em;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Список функций мультиплеера */
+.game-features-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.game-features-list li {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    border-left: 3px solid rgba(220, 190, 255, 0.4);
+}
+
+.game-features-list li:hover {
+    transform: translateX(5px);
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.game-features-list li strong {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.05em;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.game-features-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Список уровней ИИ */
+.ai-levels-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.ai-levels-list li {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    border-top: 3px solid rgba(220, 190, 255, 0.4);
+}
+
+.ai-levels-list li:hover {
+    transform: translateY(-3px);
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.ai-levels-list li strong {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-levels-list li p {
+    margin: 10px 0 0 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.ai-levels-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Адаптивность для режимов игры */
+@media (max-width: 768px) {
+    .game-mode-section {
+        padding: 20px;
+    }
+    
+    .game-features-list li,
+    .ai-levels-list li {
+        padding: 16px 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-mode-section {
+        padding: 18px;
+    }
+    
+    .game-mode-section h4 {
+        font-size: 1.2em;
+    }
+    
+    .game-features-list li,
+    .ai-levels-list li {
+        padding: 14px 16px;
+    }
+    
+    .game-features-list li strong,
+    .ai-levels-list li strong {
+        font-size: 1em;
+    }
+    
+    .ai-levels-list li p {
+        font-size: 0.9em;
     }
 }

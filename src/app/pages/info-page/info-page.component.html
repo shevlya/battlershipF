@@ -1,10 +1,211 @@
 <div class="info-container">
     <div class="info-card">
-        <h2>Об игре</h2>
-        <div class="info-text">
-            Цель игры «Морской бой» — уничтожить все корабли противника быстрее, чем он уничтожит ваши. Вы можете самостоятельно расставить свои десять кораблей в любом месте игрового поля.<br><br>
-            Игра была разработана Алиевой Ж.М., Рассказовой А.С., Шевляковой Д.Н.
+        <h2>Об игре «Морской бой»</h2>
+        
+        <div class="toc" id="toc">
+            <h3>Содержание</h3>
+            <div class="toc-links">
+                <a href="#introduction" (click)="onAnchorClick($event, 'introduction')" class="toc-link">Введение</a>
+                <a href="#description" (click)="onAnchorClick($event, 'description')" class="toc-link">Описание игры</a>
+                <a href="#functionality" (click)="onAnchorClick($event, 'functionality')" class="toc-link">Функциональные возможности</a>
+                <a href="#game-modes" (click)="onAnchorClick($event, 'game-modes')" class="toc-link">Режимы игры</a>
+                <a href="#placement" (click)="onAnchorClick($event, 'placement')" class="toc-link">Стратегии расстановки</a>
+                <a href="#interface" (click)="onAnchorClick($event, 'interface')" class="toc-link">Управление интерфейсом</a>
+                <a href="#authors" (click)="onAnchorClick($event, 'authors')" class="toc-link">Разработчики</a>
+            </div>
         </div>
-        <a routerLink="/" class="btn-menu">Меню</a>
+
+        <div class="info-text">
+            <!-- Введение -->
+            <section id="introduction">
+                <h3>Введение</h3>
+                <p>Игра «Морской бой» - это классическая стратегическая игра, переведенная в цифровой формат с современными возможностями.</p>
+                <p>Цель игры - уничтожить все корабли противника быстрее, чем он уничтожит ваши.</p>
+                <p>Разработанное веб-приложение представляет собой автоматизированную систему для игры в «Морской бой» с поддержкой различных режимов, стратегий и возможностью игры как с другими игроками, так и с искусственным интеллектом.</p>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Описание игры -->
+            <section id="description">
+                <h3>Описание игры</h3>
+                <p>Игра проводится на двух игровых полях размером 10×10 клеток. Каждый игрок располагает флот из 10 кораблей:</p>
+                
+                <div class="ships-grid">
+                    <div class="ship-card">
+                        <h4 class="ship-title">Линкор</h4>
+                        <div class="ship-visual">
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                        </div>
+                        <p class="ship-desc">1 корабль</p>
+                        <p class="ship-desc">4 палубы</p>
+                    </div>
+                    
+                    <div class="ship-card">
+                        <h4 class="ship-title">Крейсер</h4>
+                        <div class="ship-visual">
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                        </div>
+                        <p class="ship-desc">2 корабля</p>
+                        <p class="ship-desc">3 палубы</p>
+                    </div>
+                    
+                    <div class="ship-card">
+                        <h4 class="ship-title">Эсминец</h4>
+                        <div class="ship-visual">
+                            <div class="ship-cell"></div>
+                            <div class="ship-cell"></div>
+                        </div>
+                        <p class="ship-desc">3 корабля</p>
+                        <p class="ship-desc">2 палубы</p>
+                    </div>
+                    
+                    <div class="ship-card">
+                        <h4 class="ship-title">Катер</h4>
+                        <div class="ship-visual">
+                            <div class="ship-cell"></div>
+                        </div>
+                        <p class="ship-desc">4 корабля</p>
+                        <p class="ship-desc">1 палуба</p>                       
+                    </div>
+                </div>
+                
+                <p>Игроки по очереди совершают выстрелы, называя координаты на поле противника. Побеждает тот, кто первым уничтожит весь флот соперника.</p>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Функциональные возможности -->
+            <section id="functionality">
+                <h3>Функциональные возможности системы</h3>
+                <div class="strategy-list">
+                    <div class="strategy-item">
+                        <h4>Регистрация и авторизация</h4>
+                        <p>Создание учетной записи с уникальным логином, выбором аватара и сохранением статистики.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Профиль игрока</h4>
+                        <p>Личный кабинет с возможностью смены аватара, пароля и просмотра статистики игр.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Различные режимы игры</h4>
+                        <p>Игра в мультиплеере или против искусственного интеллекта.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Расстановка кораблей</h4>
+                        <p>Три способа: ручная расстановка, автоматическая генерация, использование расстановок.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Сохранение данных</h4>
+                        <p>Сохранение расстановок кораблей, статистики игр и пользовательских настроек.</p>
+                    </div>
+                </div>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Режимы игры -->
+            <section id="game-modes">
+                <h3>Режимы игры</h3>
+                
+                <!-- Мультиплеерная игра -->
+                <div class="game-mode-section">
+                    <h4>Мультиплеерная игра</h4>
+                    <p>Возможность игры с другим игроком:</p>
+                    <ul class="game-features-list">
+                        <li><strong>Список онлайн-игроков:</strong> Просмотр игроков, доступных для игры в реальном времени</li>
+                        <li><strong>Приглашение игрока:</strong> Выбор и приглашение игрока из списка онлайн-игроков</li>
+                        <li><strong>Система приглашений:</strong> Ожидание подтверждения и управление приглашениями</li>
+                        <li><strong>Приватная комната:</strong> Создание защищённой комнаты для игры с другом</li>
+                    </ul>
+                </div>
+                
+                <!-- Игра с искусственным интеллектом -->
+                <div class="game-mode-section">
+                    <h4>Игра с искусственным интеллектом</h4>
+                    <p>Доступны три уровня сложности:</p>
+                    <ul class="ai-levels-list">
+                        <li>
+                            <strong>Матрос (легкий)</strong>
+                            <p>ИИ использует случайные выстрелы без стратегии</p>
+                        </li>
+                        <li>
+                            <strong>Капитан (средний)</strong>
+                            <p>ИИ применяет стратегический подход к поиску кораблей</p>
+                        </li>
+                        <li>
+                            <strong>Адмирал (сложный)</strong>
+                            <p>ИИ использует продвинутые алгоритмы поиска и анализ</p>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Стратегии расстановки -->
+            <section id="placement">
+                <h3>Стратегии расстановки кораблей</h3>
+                <div class="strategy-list">
+                    <div class="strategy-item">
+                        <h4>Берега</h4>
+                        <p>Размещение кораблей вдоль границ игрового поля.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Половина поля</h4>
+                        <p>Концентрация всех кораблей преимущественно в одной половине поля.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Диагональное расположение</h4>
+                        <p>Размещение кораблей по диагонали.</p>
+                    </div>
+                    <div class="strategy-item">
+                        <h4>Разброс</h4>
+                        <p>Хаотичное распределение кораблей без очевидных закономерностей.</p>
+                    </div>
+                </div>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Управление интерфейсом -->
+            <section id="interface">
+                <h3>Управление и интерфейс</h3>
+                <h4>Добавление и поиск игрока</h4>
+                <p>Для добавления в игру нового пользователя необходимо заполнить все обязательные поля формы регистрации. Для поиска уже зарегистрированного игрока нужно перейти в раздел мультиплеерная игра, в котором можно выбрать игрока, который находится онлайн.</p>
+                
+                <h4>Работа с расстановками</h4>
+                <p>Система позволяет сохранять удачные расстановки кораблей для последующего использования. Для загрузки сохраненной схемы необходимо выбрать её из списка доступных расстановок.</p>
+                
+                <h4>Игровой процесс</h4>
+                <p>После начала игры игроки по очереди совершают выстрелы. Система автоматически определяет попадания, промахи и потопление кораблей.</p>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+
+            <!-- Разработчики -->
+            <section id="authors">
+                <h3>Разработчики</h3>
+                <p>Игра была разработана в рамках лабораторного практикума по дисциплине «Технологии программирования»: Алиева Ж.М., Рассказова А.С., Шевлякова Д.Н.</p>
+                <p>Руководитель проекта: Оплачко Д.С.</p>
+                <div class="back-to-toc">
+                    <a href="#toc" (click)="onAnchorClick($event, 'toc')">Вернуться к содержанию</a>
+                </div>
+            </section>
+        </div>
+
+        <a routerLink="/" class="btn-menu">Вернуться на главную страницу</a>
     </div>
 </div>
