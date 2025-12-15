@@ -2,9 +2,9 @@
   <div class="game-header">
     <div class="game-id">Game ID: {{ gameId }}</div>
   </div>
-  
+
   <div class="fields-container">
-    <!-- Ваше поле -->
+    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ СОПЕРНИКА по вам -->
     <div class="field-section">
       <h3>Ваше поле</h3>
       <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
@@ -15,17 +15,18 @@
         </div>
         <div *ngFor="let row of rows; let i = index" class="battlefield-row">
           <div class="coordinate">{{ row }}</div>
-          <div 
-            *ngFor="let col of columns; let j = index" 
+          <div
+            *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i] && myField[i][j] === 1 && !myHits[i][j]"
-            [class.hit]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 1"
-            [class.miss]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 0"
+            [class.ship]="myField[i]?.[j] === 'S' && myHits[i]?.[j] !== 'H'"
+            [class.hit]="myHits[i]?.[j] === 'H'"
+            [class.miss]="myHits[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, true)">
-            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 1) {
+
+            @if (myHits[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 0) {
+            @if (myHits[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -33,7 +34,7 @@
       </div>
     </div>
 
-    <!-- Поле соперника -->
+    <!-- Поле соперника - отображает ТОЛЬКО ВАШИ выстрелы по сопернику -->
     <div class="field-section">
       <h3>Поле соперника</h3>
       <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
@@ -44,18 +45,19 @@
         </div>
         <div *ngFor="let row of rows; let i = index" class="battlefield-row">
           <div class="coordinate">{{ row }}</div>
-          <div 
-            *ngFor="let col of columns; let j = index" 
+          <div
+            *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 1"
-            [class.miss]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 0"
+            [class.hit]="opponentField[i]?.[j] === 'H'"
+            [class.miss]="opponentField[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && opponentHits[i] && !opponentHits[i][j]"
+            [class.selectable]="isYourTurn && opponentField[i]?.[j] === ' '"
             (click)="onOpponentCellClick(i, j)">
-            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 1) {
+
+            @if (opponentField[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 0) {
+            @if (opponentField[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -77,13 +79,13 @@
         </div>
       </div>
     </div>
-    
+
     <div class="controls-center">
       <div class="turn-status" [class.your-turn]="isYourTurn" [class.opponent-turn]="!isYourTurn">
         {{ isYourTurn ? 'Ваш ход' : 'Ход соперника' }}
       </div>
     </div>
-    
+
     <div class="controls-right">
       <div class="action-buttons">
         <button class="btn coral" (click)="surrender()">Сдаться</button>
