@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
-import { WebSocketService, GameStartNotification } from '../../services/webSocket.service';
-import { ActivatedRoute } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { DatePipe, CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {Router, ActivatedRoute} from '@angular/router';
+import {AuthService} from '../../services/auth.service';
+import {WebSocketService, GameStartNotification} from '../../services/webSocket.service';
+
 /**
  * Интерфейс для представления корабля на игровом поле
  */
@@ -48,6 +47,23 @@ interface BoardLayoutDTO {
   ships: ShipPlacement[];
   matrix: string[][];  // Character[][] в Java эквивалентен string[][] в TypeScript
 }
+// В начало файла, после других интерфейсов
+interface GameConfig {
+  gameId: number;
+  playerId: number;
+  difficulty?: string;     // Для одиночной игры
+  opponentId?: number;     // Для мультиплеера
+  gameType: 'SINGLE_PLAYER' | 'MULTIPLAYER';
+  ships: ShipPlacement[];
+}
+
+interface WebSocketConfig {
+  playerId: number;
+  opponentId: number;
+  gameType: string;
+}
+
+
 /**
  * Конфигурация типов кораблей и их количества
  */
@@ -108,6 +124,8 @@ export class PlacementUserPageComponent {
   showCancelReadyPopup = false;
   showMessagePopup = false; //для замены alert потом
 
+
+
   /** Данные для попапа сообщения замены alert */
   messageTitle = '';
   messageText = '';
@@ -135,9 +153,16 @@ export class PlacementUserPageComponent {
   isPlayerReady = false;
   opponentId: number | null = null; // ID оппонента, нужно будет получить при входе на страницу
   gameId: number | null = null;
+  /** Уровень сложности для игры с ИИ */
+  difficulty: string = 'captain';
+
+    /** Конфигурация игры */
+  gameConfig: GameConfig | null = null;
 
   /** Текущий авторизованный пользователь */
   currentPlayer: any = null;
+  // В класс компонента добавить:
+  gameType: 'SINGLE_PLAYER' | 'MULTIPLAYER' = 'SINGLE_PLAYER';
 
   /**
    * Геттер для получения ID текущего пользователя
@@ -151,10 +176,10 @@ export class PlacementUserPageComponent {
   }
 
   constructor(
-    private authService: AuthService,
-    private router: Router,
-    private webSocketService: WebSocketService,
-    private route: ActivatedRoute
+    private readonly authService: AuthService,
+    private readonly router: Router,
+    private readonly webSocketService: WebSocketService,
+    private readonly route: ActivatedRoute
   ) {}
 
   /**
@@ -162,28 +187,133 @@ export class PlacementUserPageComponent {
    * Загружает данные текущего пользователя и его сохраненные расстановки
    */
 
+  // Обновить ngOnInit():
   ngOnInit() {
     this.loadCurrentPlayer();
-    // Получаем opponentId из параметров URL
+
+    // Получаем параметры из URL
     this.route.queryParams.subscribe(params => {
-      if (params['opponentId']) {
+      console.log('Параметры URL в placement:', params);
+
+      // Сначала проверяем явный параметр gameType
+      if (params['gameType']) {
+        this.gameType = params['gameType'] as 'SINGLE_PLAYER' | 'MULTIPLAYER';
+
+        if (this.gameType === 'MULTIPLAYER' && params['opponentId']) {
+          this.opponentId = +params['opponentId'];
+          console.log('Мультиплеер: ID оппонента:', this.opponentId);
+          this.connectToWebSocket();
+        } else if (this.gameType === 'SINGLE_PLAYER' && params['difficulty']) {
+          this.difficulty = params['difficulty'];
+          console.log('Одиночная игра: уровень сложности:', this.difficulty);
+        }
+      }
+      // Для обратной совместимости - определяем по наличию opponentId
+      else if (params['opponentId']) {
+        this.gameType = 'MULTIPLAYER';
         this.opponentId = +params['opponentId'];
-        console.log('Получен ID оппонента:', this.opponentId);
-      } else {
-        console.warn('Параметр opponentId не найден в URL');
+        console.log('Мультиплеер (совместимость): ID оппонента:', this.opponentId);
+        this.connectToWebSocket();
       }
-    });
-
-    // Подписываемся на события начала игры
-    this.webSocketService.subscribeToGameStartDirect((notification) => {
-      if (notification.gameId) {
-        console.log('Игра началась! ID:', notification.gameId);
-        this.gameId = notification.gameId;
-
-        // Перенаправляем на игровое поле
-        this.navigateToGamePage(notification);
+      else if (params['difficulty']) {
+        this.gameType = 'SINGLE_PLAYER';
+        this.difficulty = params['difficulty'];
+        console.log('Одиночная игра (совместимость): уровень сложности:', this.difficulty);
       }
+      // Если нет параметров, проверяем state
+      else {
+        const navigation = window.history.state;
+        if (navigation && navigation.difficulty) {
+          this.gameType = 'SINGLE_PLAYER';
+          this.difficulty = navigation.difficulty;
+          console.log('Одиночная игра (из state):', this.difficulty);
+        } else {
+          console.error('Не удалось определить режим игры!');
+          // Показываем пользователю ошибку
+          this.showMessage('Ошибка', 'Не удалось определить режим игры. Пожалуйста, вернитесь в лобби и выберите режим игры заново.');
+        }
+      }
+
+      console.log('Определен режим игры:', this.gameType);
     });
+  }
+
+  playerReady() {
+    if (!this.isAllShipsPlaced()) {
+      this.showMessage('Внимание', 'Разместите все корабли перед началом игры!');
+      return;
+    }
+
+    // Проверяем, что режим игры определен
+    if (!this.gameType) {
+      this.showMessage('Ошибка', 'Не удалось определить режим игры. Перезагрузите страницу.');
+      return;
+    }
+
+    const playerId = this.currentPlayer?.player_id;
+    if (!playerId) {
+      this.showMessage('Ошибка', 'Не удалось определить ваш ID. Пожалуйста, перезагрузите страницу.');
+      return;
+    }
+
+    // Сохраняем playerId для следующей страницы
+    this.savePlayerIdForNextPage(playerId);
+
+    if (this.gameType === 'SINGLE_PLAYER') {
+      this.startSinglePlayerGame();
+    } else if (this.gameType === 'MULTIPLAYER') {
+      this.startMultiplayerGame();
+    }
+  }
+
+
+// Метод подключения к WebSocket (только для мультиплеера):
+  private async connectToWebSocket() {
+    const playerId = this.currentPlayer?.player_id;
+    if (!playerId) {
+      console.error('Не удалось получить playerId для подключения к WebSocket');
+      return;
+    }
+
+    try {
+      if (!this.webSocketService.isConnected()) {
+        console.log('Подключение к WebSocket для мультиплеера...');
+        await this.webSocketService.connect(playerId);
+        console.log('Успешно подключено к WebSocket');
+      }
+
+      // Подписываемся на события начала игры только для мультиплеера
+      this.webSocketService.subscribeToGameStartDirect((notification) => {
+        console.log('Получено уведомление о начале игры (мультиплеер):', notification);
+
+        if (notification.gameId) {
+          const playerId = this.currentPlayer?.player_id;
+
+          const queryParams = {
+            gameId: notification.gameId,
+            playerId: playerId,
+            opponentId: notification.opponentId,
+            gameType: 'MULTIPLAYER'
+          };
+
+          console.log('Переход на мультиплеерную игру:', queryParams);
+
+          this.router.navigate(['/two-players-field', notification.gameId], {
+            queryParams: queryParams
+          });
+        }
+      });
+
+    } catch (error) {
+      console.error('Ошибка подключения к WebSocket:', error);
+      alert('Не удалось подключиться к серверу. Пожалуйста, проверьте интернет-соединение.');
+    }
+  }
+  private initializeWebSocket() {
+    // Здесь будет инициализация WebSocket
+    console.log('Инициализация WebSocket для мультиплеера');
+    // this.webSocketService.connect();
+    // this.webSocketService.subscribeToGameStart(...);
   }
 
   private navigateToGamePage(notification: GameStartNotification): void {
@@ -319,18 +449,112 @@ export class PlacementUserPageComponent {
   }
   /**
    * Запуск игры после успешной расстановки всех кораблей
-   * Проверяет, что все корабли размещены, и конвертирует данные для отправки на сервер
+   * Проверяет, что все корабли размещены, и конвертирует данные для отправки на сервер - единый метод для обоих режимов
    */
   startGame() {
-    if (this.isAllShipsPlaced()) {
-      console.log('Начало игры');
-      const serverFormat = this.convertToServerFormat();
-      console.log('Данные для сервера:', serverFormat);
-      this.router.navigate(['/two-players-field']);
-      // TODO: Добавить отправку данных на сервер и переход к игре (на F12 можно глянуть, что сейчас "сохраняется" с целью отправки, картинка в README на всякий)
-    } else {
-      alert('Разместите все корабли перед началом игры!');
+    if (!this.isAllShipsPlaced()) {
+      this.showMessage('Внимание', 'Разместите все корабли перед началом игры!');
+      return;
     }
+
+    if (this.gameType === 'MULTIPLAYER') {
+      this.startMultiplayerGame();
+    } else {
+      this.startSinglePlayerGame();
+    }
+  }
+
+  /**
+   * Запуск одиночной игры
+   */
+  private startSinglePlayerGame() {
+    console.log('Запуск одиночной игры');
+    const serverFormat = this.convertToServerFormat();
+
+    const gameId = Date.now();
+    const playerId = this.currentPlayer?.id || 0;
+
+    const gameConfig: GameConfig = {
+      gameId: gameId,
+      playerId: playerId,
+      difficulty: this.difficulty,
+      gameType: 'SINGLE_PLAYER',
+      ships: serverFormat
+    };
+
+    this.saveGameConfig(gameConfig);
+
+    this.router.navigate(['/two-players-field', gameId], {
+      queryParams: {
+        gameId: gameId,
+        playerId: playerId,
+        difficulty: this.difficulty,
+        gameType: 'SINGLE_PLAYER'
+      }
+    });
+  }
+  /**
+   * Сохранение конфигурации игры
+   */
+  private saveGameConfig(config: GameConfig) {
+    sessionStorage.setItem('gameConfig', JSON.stringify(config));
+    localStorage.setItem('lastGameConfig', JSON.stringify(config));
+    console.log('Сохранена конфигурация игры:', config);
+  }
+
+  /**
+   * Проверка готовности к мультиплееру
+   */
+  isMultiplayerReady(): boolean {
+    return this.gameType === 'MULTIPLAYER' && this.isPlayerReady;
+  }
+
+  /**
+   * Запуск многопользовательской игры
+   */
+  private startMultiplayerGame() {
+    console.log('Запуск многопользовательской игры');
+
+    if (!this.opponentId) {
+      this.showMessage('Ошибка', 'ID оппонента не найден');
+      return;
+    }
+
+    const playerId = this.currentPlayer?.id;
+    if (!playerId) {
+      this.showMessage('Ошибка', 'Не удалось определить ваш ID');
+      return;
+    }
+
+    // Для мультиплеера используем WebSocket
+    const serverFormat = this.convertToServerFormat();
+
+    // TODO: Отправка через WebSocket
+    // const message = {
+    //   type: 'PLAYER_READY',
+    //   playerId: playerId,
+    //   opponentId: this.opponentId,
+    //   ships: serverFormat
+    // };
+    // this.webSocketService.send(message);
+
+    // Временно сохраняем в sessionStorage
+    const gameId = Date.now();
+    const gameConfig: GameConfig = {
+      gameId: gameId,
+      playerId: playerId,
+      opponentId: this.opponentId,
+      gameType: 'MULTIPLAYER',
+      ships: serverFormat
+    };
+
+    this.saveGameConfig(gameConfig);
+    this.isPlayerReady = true;
+
+    this.showMessage(
+      'Ожидание оппонента',
+      'Вы готовы к игре. Ожидаем, когда оппонент разместит свои корабли...'
+    );
   }
 
   // ==================== МЕТОДЫ DRAG & DROP ====================
@@ -349,47 +573,7 @@ export class PlacementUserPageComponent {
       event.dataTransfer?.setData('text/plain', 'ship');
     }
   }
-  playerReady() {
-    if (!this.isAllShipsPlaced()) {
-      alert('Разместите все корабли перед началом игры!');
-      return;
-    }
 
-    if (!this.opponentId) {
-      alert('Ошибка: оппонент не определен. Перезагрузите страницу.');
-      return;
-    }
-
-    if (!this.webSocketService.isConnected()) {
-      alert('Ошибка соединения с сервером. Попробуйте обновить страницу.');
-      return;
-    }
-
-    // Проверяем наличие ID игрока
-    const playerId = this.currentPlayer.player_id;
-    if (!playerId) {
-      alert('Ошибка: не удалось определить ваш ID. Пожалуйста, перезагрузите страницу.');
-      return;
-    }
-
-    // Сохраняем playerId для передачи на следующую страницу
-    this.savePlayerIdForNextPage(playerId);
-
-    // Конвертируем расстановку в формат для сервера
-    const boardLayout = this.convertToBoardLayoutDTO();
-
-    const readyMessage: GameReadyMessage = {
-      playerId: playerId,
-      opponentId: this.opponentId,
-      boardLayout: boardLayout,
-      gameType: 'MULTIPLAYER'
-    };
-
-    console.log('Отправка сообщения о готовности:', readyMessage);
-    this.webSocketService.sendPlayerReady(readyMessage);
-    this.isPlayerReady = true;
-
-  }
 
   private savePlayerIdForNextPage(playerId: number): void {
     // Сохраняем в sessionStorage для использования на следующей странице
