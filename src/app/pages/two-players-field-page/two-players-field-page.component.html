@@ -4,7 +4,7 @@
   </div>
 
   <div class="fields-container">
-    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ СОПЕРНИКА по вам -->
+    <!-- Ваше поле -->
     <div class="field-section">
       <h3>Ваше поле</h3>
       <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
@@ -18,15 +18,14 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i]?.[j] === 'S' && myHits[i]?.[j] !== 'H'"
-            [class.hit]="myHits[i]?.[j] === 'H'"
-            [class.miss]="myHits[i]?.[j] === 'M'"
+            [class.ship]="myField[i] && myField[i][j] === 'SHIP' && !myHits[i][j]"
+            [class.hit]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'HIT'"
+            [class.miss]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'MISS'"
             [class.sunk]="isShipSunk(i, j, true)">
-
-            @if (myHits[i]?.[j] === 'H') {
+            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'HIT') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i]?.[j] === 'M') {
+            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'MISS') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -34,7 +33,7 @@
       </div>
     </div>
 
-    <!-- Поле соперника - отображает ТОЛЬКО ВАШИ выстрелы по сопернику -->
+    <!-- Поле соперника -->
     <div class="field-section">
       <h3>Поле соперника</h3>
       <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
@@ -48,16 +47,15 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentField[i]?.[j] === 'H'"
-            [class.miss]="opponentField[i]?.[j] === 'M'"
+            [class.hit]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'HIT'"
+            [class.miss]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'MISS'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && opponentField[i]?.[j] === ' '"
+            [class.selectable]="isYourTurn && opponentHits[i] && !opponentHits[i][j]"
             (click)="onOpponentCellClick(i, j)">
-
-            @if (opponentField[i]?.[j] === 'H') {
+            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'HIT') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentField[i]?.[j] === 'M') {
+            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'MISS') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -131,7 +129,19 @@
     </div>
   </div>
 }
+<!-- Добавьте в шаблон -->
+<div class="debug-info" *ngIf="gameId">
+  <p>Game ID: {{ gameId }}</p>
+  <p>Game Status: {{ gameState.gameStatus }}</p>
+  <p>Is Game Started: {{ isGameStarted }}</p>
+  <p>Is Loading: {{ isLoading }}</p>
+</div>
 
+@if (errorMessage) {
+  <div class="error-message">
+    {{ errorMessage }}
+  </div>
+}
 <!-- Попап для ответа на ничью -->
 @if (showDrawResponsePopup) {
   <div class="popup-overlay" (click)="declineDraw()">

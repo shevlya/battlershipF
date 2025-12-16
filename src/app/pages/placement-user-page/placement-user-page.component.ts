@@ -410,7 +410,7 @@ export class PlacementUserPageComponent {
   confirmCancelReady() {
     this.isPlayerReady = false;
     this.showCancelReadyPopup = false;
-    
+
     this.showMessage(
       'Готовность отменена',
       'Вы можете изменить расстановку кораблей. Окно может быть закрыто автоматически через 5 секунд или нажатием на кнопку'
@@ -584,7 +584,7 @@ export class PlacementUserPageComponent {
   isValidPosition(row: string, col: number): boolean {
     const rowIndex = this.rows.indexOf(row);
     return rowIndex >= 0 && rowIndex < this.rows.length &&
-           col >= 1 && col <= this.columns.length;
+      col >= 1 && col <= this.columns.length;
   }
 
   /**
@@ -622,7 +622,7 @@ export class PlacementUserPageComponent {
       const newCol = col + dir.c;
 
       if (newRowIndex >= 0 && newRowIndex < this.rows.length &&
-          newCol >= 1 && newCol <= this.columns.length) {
+        newCol >= 1 && newCol <= this.columns.length) {
         const adjacentRow = this.rows[newRowIndex];
         if (this.hasShip(adjacentRow, newCol)) {
           return true;
@@ -674,7 +674,7 @@ export class PlacementUserPageComponent {
     if (!this.draggedShip || !this.hoveredCell) return false;
 
     return this.potentialPositions.some(pos => pos.row === row && pos.col === col) &&
-           this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
+      this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
   }
 
   /**
@@ -687,7 +687,7 @@ export class PlacementUserPageComponent {
     if (!this.draggedShip || !this.hoveredCell) return false;
 
     return this.potentialPositions.some(pos => pos.row === row && pos.col === col) &&
-           !this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
+      !this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
   }
 
   // ==================== МЕТОДЫ РАСЧЕТА ПОЗИЦИЙ ====================

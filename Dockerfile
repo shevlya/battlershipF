@@ -10,30 +10,41 @@ RUN npm install
 # Копируем исходный код
 COPY . .
 
-# Исправляем бюджеты размера и разрешаем CommonJS зависимости
-RUN npm install -D json
-RUN node -e "const fs = require('fs'); const path = require('path'); const config = JSON.parse(fs.readFileSync('angular.json', 'utf8')); \
-  config.projects.battleship.architect.build.configurations.production.budgets = [ \
-    { type: 'initial', maximumWarning: '2mb', maximumError: '5mb' }, \
-    { type: 'anyComponentStyle', maximumWarning: '10kb', maximumError: '15kb' } \
-  ]; \
-  config.projects.battleship.architect.build.options = config.projects.battleship.architect.build.options || {}; \
-  config.projects.battleship.architect.build.options.allowedCommonJsDependencies = ['sockjs-client', 'webstomp-client']; \
-  fs.writeFileSync('angular.json', JSON.stringify(config, null, 2));"
+# Исправляем angular.json для увеличения бюджета
+RUN echo 'Увеличиваем бюджет сборки...' && \
+    sed -i 's/"maximumWarning": "2kb"/"maximumWarning": "10kb"/g' angular.json && \
+    sed -i 's/"maximumError": "4kb"/"maximumError": "15kb"/g' angular.json && \
+    sed -i 's/"maximumWarning": "500kb"/"maximumWarning": "2mb"/g' angular.json && \
+    sed -i 's/"maximumError": "1mb"/"maximumError": "5mb"/g' angular.json
 
 # Сборка для production
 ARG API_URL=http://battleship-backend:8080
 ENV API_URL=$API_URL
-RUN npm run build -- --configuration production
+RUN npm run build:prod
+
+# Проверяем структуру папок
+RUN echo "=== Структура dist ===" && \
+    ls -la /app/dist/ && \
+    ls -la /app/dist/battleship/ && \
+    ls -la /app/dist/battleship/browser/
 
 # Этап 2: Финальный образ с Nginx
 FROM nginx:alpine
 
+# Удаляем дефолтную страницу nginx
+RUN rm -rf /usr/share/nginx/html/*
+
 # Копируем конфигурацию Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Копируем собранные файлы
-COPY --from=build-stage /app/dist/battleship /usr/share/nginx/html
+# Копируем собранные файлы Angular из папки browser
+COPY --from=build-stage /app/dist/battleship/browser/ /usr/share/nginx/html/
+
+# Проверяем что скопировалось
+RUN echo "=== Файлы в nginx ===" && \
+    ls -la /usr/share/nginx/html/ && \
+    echo "=== index.html первые строки ===" && \
+    head -10 /usr/share/nginx/html/index.html 2>/dev/null || echo "index.html не найден"
 
 # Открываем порт для веб-сервера
 EXPOSE 80
