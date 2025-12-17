@@ -618,20 +618,12 @@ export class TwoPlayersFieldComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   private showGameResult(endNotification: any) {
-    console.log('Показать результат игры:', endNotification);
-
-    // 1. Проверяем на ничью
+    // Теперь это сработает, так как бэк пришлет winnerId как число
     if (endNotification.draw) {
       this.router.navigate(['/lobby']);
-      return;
-    }
-
-    // 2. Проверяем победителя
-    if (endNotification.winnerId === this.playerId) {
-      // Вы победили
+    } else if (endNotification.winnerId === this.playerId) {
       this.router.navigate(['/win']);
     } else {
-      // Вы проиграли (победил другой ID)
       this.router.navigate(['/lose']);
     }
   }
