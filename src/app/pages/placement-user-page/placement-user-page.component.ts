@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { WebSocketService, GameStartNotification } from '../../services/webSocket.service';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+
 /**
  * Интерфейс для представления корабля на игровом поле
  */
@@ -44,18 +45,20 @@ interface GameReadyMessage {
   boardLayout: BoardLayoutDTO;
   gameType: string;
 }
+
 interface BoardLayoutDTO {
   ships: ShipPlacement[];
-  matrix: string[][];  // Character[][] в Java эквивалентен string[][] в TypeScript
+  matrix: string[][];
 }
+
 /**
  * Конфигурация типов кораблей и их количества
  */
 const SHIP_TYPES = [
-  { type: 'battleship', size: 4, count: 1 },   // 1 линкор (4 клетки)
-  { type: 'cruiser', size: 3, count: 2 },      // 2 крейсера (3 клетки)
-  { type: 'destroyer', size: 2, count: 3 },    // 3 эсминца (2 клетки)
-  { type: 'boat', size: 1, count: 4 }          // 4 катера (1 клетка)
+  { type: 'battleship', size: 4, count: 1 },
+  { type: 'cruiser', size: 3, count: 2 },
+  { type: 'destroyer', size: 2, count: 3 },
+  { type: 'boat', size: 1, count: 4 }
 ];
 
 /**
@@ -63,18 +66,6 @@ const SHIP_TYPES = [
  */
 const BOARD_SIZE = 10;
 
-/**
- * Компонент для расстановки кораблей перед началом игры в морской бой
- *
- * Основные функции:
- * - Drag & Drop расстановка кораблей
- * - Сохранение/загрузка пользовательских расстановок
- * - Автоматическая расстановка по различным стратегиям
- * - Валидация правильности расстановки
- *
- * @component
- * @selector app-placement-user-page
- */
 @Component({
   selector: 'app-placement-user-page',
   standalone: true,
@@ -83,42 +74,24 @@ const BOARD_SIZE = 10;
   styleUrl: './placement-user-page.component.scss'
 })
 export class PlacementUserPageComponent {
-  /** Буквенные обозначения строк игрового поля */
   rows = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К'];
-
-  /** Числовые обозначения столбцов игрового поля */
   columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-  /** Текущая ориентация корабля (горизонтальная/вертикальная) */
   isHorizontal = true;
-
-  /** Перетаскиваемый корабль */
   draggedShip: any = null;
-
-  /** Ячейка над которой находится курсор при перетаскивании */
   hoveredCell: { row: string, col: number } | null = null;
-
-  /** Потенциальные позиции для размещения корабля */
   potentialPositions: { row: string, col: number }[] = [];
 
-  /** Флаги отображения всплывающих окон */
   showLoadPopup = false;
   showSavePopup = false;
   showClearConfirmation = false;
   showCancelReadyPopup = false;
-  showMessagePopup = false; //для замены alert потом
-
-  /** Данные для попапа сообщения замены alert */
+  showMessagePopup = false;
   messageTitle = '';
   messageText = '';
 
-  /** Название новой сохраняемой расстановки */
   newPlacementName: string = '';
-
-  /** Список сохраненных пользовательских расстановок */
   userPlacements: UserPlacement[] = [];
 
-  /** Список кораблей для расстановки */
   ships: Ship[] = [
     { id: 1, type: 'battleship', size: 4, positions: [], placed: false },
     { id: 2, type: 'cruiser', size: 3, positions: [], placed: false },
@@ -133,16 +106,10 @@ export class PlacementUserPageComponent {
   ];
 
   isPlayerReady = false;
-  opponentId: number | null = null; // ID оппонента, нужно будет получить при входе на страницу
+  opponentId: number | null = null;
   gameId: number | null = null;
-
-  /** Текущий авторизованный пользователь */
   currentPlayer: any = null;
 
-  /**
-   * Геттер для получения ID текущего пользователя
-   * Используется для привязки сохраненных расстановок к пользователю
-   */
   private get userId(): string {
     if (this.currentPlayer && this.currentPlayer.player_id) {
       return this.currentPlayer.player_id;
@@ -157,14 +124,9 @@ export class PlacementUserPageComponent {
     private route: ActivatedRoute
   ) {}
 
-  /**
-   * Инициализация компонента
-   * Загружает данные текущего пользователя и его сохраненные расстановки
-   */
-
   ngOnInit() {
     this.loadCurrentPlayer();
-    // Получаем opponentId из параметров URL
+    
     this.route.queryParams.subscribe(params => {
       if (params['opponentId']) {
         this.opponentId = +params['opponentId'];
@@ -174,13 +136,10 @@ export class PlacementUserPageComponent {
       }
     });
 
-    // Подписываемся на события начала игры
     this.webSocketService.subscribeToGameStartDirect((notification) => {
       if (notification.gameId) {
         console.log('Игра началась! ID:', notification.gameId);
         this.gameId = notification.gameId;
-
-        // Перенаправляем на игровое поле
         this.navigateToGamePage(notification);
       }
     });
@@ -190,11 +149,10 @@ export class PlacementUserPageComponent {
     const playerId = this.currentPlayer?.player_id;
 
     if (!playerId) {
-      console.error('Player ID не найден для навигации');
+      this.showMessage('Ошибка навигации', 'Player ID не найден для навигации', false);
       return;
     }
 
-    // Подготавливаем данные для передачи
     const queryParams = {
       gameId: notification.gameId,
       playerId: playerId,
@@ -203,27 +161,27 @@ export class PlacementUserPageComponent {
 
     console.log('Переход на страницу игры с параметрами:', queryParams);
 
-    // Переход на страницу игры с передачей параметров
     this.router.navigate(['/two-players-field', notification.gameId], {
       queryParams: queryParams
     });
   }
 
-  /**
-   * Загрузка данных текущего пользователя из сервиса аутентификации
-   */
   loadCurrentPlayer() {
     this.currentPlayer = this.authService.getCurrentUser();
     console.log('Текущий пользователь:', this.currentPlayer);
 
     if (!this.currentPlayer) {
       console.error('Пользователь не авторизован');
-      alert('Вы не авторизованы. Пожалуйста, войдите в систему.');
-      this.router.navigate(['/login']);
+      this.showMessage(
+        'Ошибка авторизации', 
+        'Вы не авторизованы. Пожалуйста, войдите в систему.',
+        false
+      ).then(() => {
+        this.router.navigate(['/login']);
+      });
       return;
     }
 
-    // Сохраняем playerId сразу для использования во всем приложении
     if (this.currentPlayer.player_id) {
       this.savePlayerIdForNextPage(this.currentPlayer.player_id);
     }
@@ -231,12 +189,6 @@ export class PlacementUserPageComponent {
     this.loadUserPlacements();
   }
 
-  // ==================== МЕТОДЫ УПРАВЛЕНИЯ ИГРОВЫМ ПОЛЕМ ====================
-
-  /**
-   * Запрос на очистку игрового поля с подтверждением
-   * Запрещает очистку пустого поля
-   */
   requestClearBoard() {
     if (!this.hasAtLeastOneShip()) {
       return;
@@ -244,17 +196,12 @@ export class PlacementUserPageComponent {
     this.showClearConfirmation = true;
   }
 
-  /**
-   * Подтверждение очистки игрового поля
-   */
   confirmClear() {
     this.clearBoard();
     this.showClearConfirmation = false;
+    this.showMessage('Поле очищено', 'Все корабли удалены с игрового поля');
   }
 
-  /**
-   * Отмена очистки игрового поля
-   */
   cancelClear() {
     this.showClearConfirmation = false;
   }
@@ -266,9 +213,6 @@ export class PlacementUserPageComponent {
     this.isHorizontal = !this.isHorizontal;
   }
 
-  /**
-   * Полная очистка игрового поля - сбрасывает все корабли в исходное состояние
-   */
   clearBoard() {
     this.ships.forEach(ship => {
       ship.positions = [];
@@ -276,9 +220,6 @@ export class PlacementUserPageComponent {
     });
   }
 
-  /**
-   * Генерация случайной расстановки всех кораблей
-   */
   generateRandom() {
     this.clearBoard();
 
@@ -289,27 +230,26 @@ export class PlacementUserPageComponent {
         this.placeShipRandomly(shipType.size, shipType.type);
       }
     }
+
+    this.showMessage('Случайная расстановка', 'Корабли расставлены случайным образом');
   }
-// Метод для конвертации расстановки в формат BoardLayoutDTO
+
   private convertToBoardLayoutDTO(): BoardLayoutDTO {
-    // Создаем матрицу 10x10, заполненную пробелами
     const matrix: string[][] = Array(10).fill(null).map(() => Array(10).fill(' '));
 
-    // Заполняем матрицу кораблями
     this.ships.forEach(ship => {
       if (ship.placed) {
         ship.positions.forEach(pos => {
           const rowIndex = this.rows.indexOf(pos.row);
-          const colIndex = pos.col - 1; // конвертируем в 0-based индекс
+          const colIndex = pos.col - 1;
 
           if (rowIndex >= 0 && rowIndex < 10 && colIndex >= 0 && colIndex < 10) {
-            matrix[rowIndex][colIndex] = 'S'; // 'S' для обозначения корабля
+            matrix[rowIndex][colIndex] = 'S';
           }
         });
       }
     });
 
-    // Подготавливаем данные о кораблях в формате ShipPlacement
     const ships = this.convertToServerFormat();
 
     return {
@@ -317,28 +257,21 @@ export class PlacementUserPageComponent {
       matrix: matrix
     };
   }
-  /**
-   * Запуск игры после успешной расстановки всех кораблей
-   * Проверяет, что все корабли размещены, и конвертирует данные для отправки на сервер
-   */
+
   startGame() {
     if (this.isAllShipsPlaced()) {
       console.log('Начало игры');
       const serverFormat = this.convertToServerFormat();
       console.log('Данные для сервера:', serverFormat);
       this.router.navigate(['/two-players-field']);
-      // TODO: Добавить отправку данных на сервер и переход к игре (на F12 можно глянуть, что сейчас "сохраняется" с целью отправки, картинка в README на всякий)
     } else {
-      alert('Разместите все корабли перед началом игры!');
+      this.showMessage(
+        'Не все корабли размещены', 
+        'Разместите все корабли перед началом игры!'
+      );
     }
   }
 
-  // ==================== МЕТОДЫ DRAG & DROP ====================
-
-  /**
-   * Обработчик начала перетаскивания корабля
-   * @param event - Событие перетаскивания
-   */
   onDragStart(event: DragEvent) {
     const target = event.target as HTMLElement;
     if (target.classList.contains('draggable')) {
@@ -349,33 +282,43 @@ export class PlacementUserPageComponent {
       event.dataTransfer?.setData('text/plain', 'ship');
     }
   }
+
   playerReady() {
     if (!this.isAllShipsPlaced()) {
-      alert('Разместите все корабли перед началом игры!');
+      this.showMessage('Не все корабли размещены', 'Разместите все корабли перед началом игры!');
       return;
     }
 
     if (!this.opponentId) {
-      alert('Ошибка: оппонент не определен. Перезагрузите страницу.');
+      this.showMessage(
+        'Ошибка оппонента', 
+        'Ошибка: оппонент не определен. Перезагрузите страницу.',
+        false
+      );
       return;
     }
 
     if (!this.webSocketService.isConnected()) {
-      alert('Ошибка соединения с сервером. Попробуйте обновить страницу.');
+      this.showMessage(
+        'Ошибка соединения', 
+        'Ошибка соединения с сервером. Попробуйте обновить страницу.',
+        false
+      );
       return;
     }
 
-    // Проверяем наличие ID игрока
     const playerId = this.currentPlayer.player_id;
     if (!playerId) {
-      alert('Ошибка: не удалось определить ваш ID. Пожалуйста, перезагрузите страницу.');
+      this.showMessage(
+        'Ошибка идентификации', 
+        'Ошибка: не удалось определить ваш ID. Пожалуйста, перезагрузите страницу.',
+        false
+      );
       return;
     }
 
-    // Сохраняем playerId для передачи на следующую страницу
     this.savePlayerIdForNextPage(playerId);
 
-    // Конвертируем расстановку в формат для сервера
     const boardLayout = this.convertToBoardLayoutDTO();
 
     const readyMessage: GameReadyMessage = {
@@ -388,15 +331,15 @@ export class PlacementUserPageComponent {
     console.log('Отправка сообщения о готовности:', readyMessage);
     this.webSocketService.sendPlayerReady(readyMessage);
     this.isPlayerReady = true;
-
+    this.showMessage(
+      'Готовность подтверждена', 
+      'Вы готовы к игре! Ожидаем готовности оппонента...'
+    );
   }
 
   private savePlayerIdForNextPage(playerId: number): void {
-    // Сохраняем в sessionStorage для использования на следующей странице
     sessionStorage.setItem('currentPlayerId', playerId.toString());
-    // Также сохраняем в глобальной переменной
     localStorage.setItem('playerId', playerId.toString());
-
     console.log('Player ID сохранен для следующей страницы:', playerId);
   }
 
@@ -404,9 +347,6 @@ export class PlacementUserPageComponent {
     this.showCancelReadyPopup = true;
   }
 
-  /**
-   * Подтверждение отмены готовности
-   */
   confirmCancelReady() {
     this.isPlayerReady = false;
     this.showCancelReadyPopup = false;
@@ -415,43 +355,8 @@ export class PlacementUserPageComponent {
       'Готовность отменена',
       'Вы можете изменить расстановку кораблей. Окно может быть закрыто автоматически через 5 секунд или нажатием на кнопку'
     );
-    // Можно добавить отправку сообщения об отмене готовности на сервер
   }
 
-  /**
-   * Показать сообщение в попапе
-   */
-  showMessage(title: string, text: string, autoClose: boolean = true) {
-    this.messageTitle = title;
-    this.messageText = text;
-    this.showMessagePopup = true;
-    if (autoClose) {
-      setTimeout(() => {
-        if (this.showMessagePopup) {
-          this.closeMessagePopup();
-        }
-      }, 5000);
-    }
-  }
-
-  /**
-   * Закрыть попап сообщения
-   */
-  closeMessagePopup() {
-    this.showMessagePopup = false;
-  }
-
-  /**
-   * Закрытие попапа отмены готовности без действий
-   */
-  closeCancelReadyPopup() {
-    this.showCancelReadyPopup = false;
-  }
-  /**
-   * Обработчик перемещения корабля над игровым полем
-   * Вычисляет потенциальные позиции для размещения
-   * @param event - Событие перетаскивания
-   */
   onDragOver(event: DragEvent) {
     event.preventDefault();
 
@@ -470,10 +375,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Обработчик выхода курсора за пределы игрового поля при перетаскивании
-   * @param event - Событие перетаскивания
-   */
   onDragLeave(event: DragEvent) {
     this.hoveredCell = null;
     this.potentialPositions = [];
@@ -499,58 +400,32 @@ export class PlacementUserPageComponent {
     this.potentialPositions = [];
   }
 
-  // ==================== МЕТОДЫ РАБОТЫ С ПОПАПАМИ ====================
-
-  /**
-   * Открытие попапа загрузки расстановки
-   */
   openLoadPopup() {
     this.showLoadPopup = true;
   }
 
-  /**
-   * Закрытие попапа загрузки расстановки
-   */
   closeLoadPopup() {
     this.showLoadPopup = false;
   }
 
-  /**
-   * Открытие попапа сохранения расстановки
-   * Проверяет, что на поле есть хотя бы один корабль
-   */
   openSavePopup() {
     if (!this.hasAtLeastOneShip()) {
-      alert('Нельзя сохранить пустую расстановку! Разместите хотя бы один корабль.');
+      this.showMessage('Пустая расстановка', 'Нельзя сохранить пустую расстановку! Разместите хотя бы один корабль.');
       return;
     }
     this.newPlacementName = `Моя расстановка ${new Date().toLocaleDateString('ru-RU')}`;
     this.showSavePopup = true;
   }
 
-  /**
-   * Закрытие попапа сохранения расстановки
-   */
   closeSavePopup() {
     this.showSavePopup = false;
     this.newPlacementName = '';
   }
 
-  // ==================== МЕТОДЫ ПРОВЕРКИ И ВАЛИДАЦИИ ====================
-
-  /**
-   * Проверка, что на поле размещен хотя бы один корабль
-   * @returns true если есть хотя бы один корабль, иначе false
-   */
   hasAtLeastOneShip(): boolean {
     return this.ships.some(ship => ship.placed && ship.positions.length > 0);
   }
 
-  /**
-   * Проверка уникальности названия расстановки
-   * @param name - Проверяемое название
-   * @returns true если название уникально, иначе false
-   */
   isPlacementNameUnique(name: string): boolean {
     const normalizedName = name.trim().toLowerCase();
     return !this.userPlacements.some(placement =>
@@ -558,63 +433,36 @@ export class PlacementUserPageComponent {
     );
   }
 
-  /**
-   * Получение количества оставшихся для размещения кораблей определенного типа
-   * @param type - Тип корабля
-   * @returns Количество неразмещенных кораблей указанного типа
-   */
   getRemainingShipsCount(type: string): number {
     return this.ships.filter(ship => ship.type === type && !ship.placed).length;
   }
 
-  /**
-   * Проверка, что все корабли размещены на поле
-   * @returns true если все корабли размещены, иначе false
-   */
   isAllShipsPlaced(): boolean {
     return this.ships.every(ship => ship.placed);
   }
 
-  /**
-   * Проверка валидности позиции на игровом поле
-   * @param row - Буква строки
-   * @param col - Номер столбца
-   * @returns true если позиция валидна, иначе false
-   */
   isValidPosition(row: string, col: number): boolean {
     const rowIndex = this.rows.indexOf(row);
     return rowIndex >= 0 && rowIndex < this.rows.length &&
            col >= 1 && col <= this.columns.length;
   }
 
-  /**
-   * Проверка наличия корабля в указанной позиции
-   * @param row - Буква строки
-   * @param col - Номер столбца
-   * @returns true если в позиции есть корабль, иначе false
-   */
   hasShip(row: string, col: number): boolean {
     return this.ships.some(ship =>
       ship.positions.some(pos => pos.row === row && pos.col === col)
     );
   }
 
-  /**
-   * Проверка наличия соседнего корабля в смежных клетках
-   * @param row - Буква строки
-   * @param col - Номер столбца
-   * @returns true если есть соседний корабль, иначе false
-   */
   hasAdjacentShip(row: string, col: number): boolean {
     const directions = [
-      { r: -1, c: 0 },  // сверху
-      { r: 1, c: 0 },   // снизу
-      { r: 0, c: -1 },  // слева
-      { r: 0, c: 1 },   // справа
-      { r: -1, c: -1 }, // сверху-слева
-      { r: -1, c: 1 },  // сверху-справа
-      { r: 1, c: -1 },  // снизу-слева
-      { r: 1, c: 1 }    // снизу-справа
+      { r: -1, c: 0 },
+      { r: 1, c: 0 },
+      { r: 0, c: -1 },
+      { r: 0, c: 1 },
+      { r: -1, c: -1 },
+      { r: -1, c: 1 },
+      { r: 1, c: -1 },
+      { r: 1, c: 1 }
     ];
 
     for (const dir of directions) {
@@ -633,24 +481,15 @@ export class PlacementUserPageComponent {
     return false;
   }
 
-  /**
-   * Проверка возможности размещения корабля в указанной позиции
-   * @param ship - Объект корабля
-   * @param startRow - Начальная строка
-   * @param startCol - Начальный столбец
-   * @returns true если корабль можно разместить, иначе false
-   */
   canPlaceShip(ship: any, startRow: string, startCol: number): boolean {
     const positions = this.getShipPositions(ship.size, startRow, startCol);
 
-    // Проверка выхода за границы поля
     for (const pos of positions) {
       if (!this.isValidPosition(pos.row, pos.col)) {
         return false;
       }
     }
 
-    // Проверка пересечения с другими кораблями и правил соседства
     for (const pos of positions) {
       if (this.hasShip(pos.row, pos.col)) {
         return false;
@@ -664,12 +503,6 @@ export class PlacementUserPageComponent {
     return true;
   }
 
-  /**
-   * Проверка является ли ячейка валидной зоной для размещения корабля
-   * @param row - Буква строки
-   * @param col - Номер столбца
-   * @returns true если ячейка валидна для размещения, иначе false
-   */
   isValidDropZone(row: string, col: number): boolean {
     if (!this.draggedShip || !this.hoveredCell) return false;
 
@@ -677,12 +510,6 @@ export class PlacementUserPageComponent {
            this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
   }
 
-  /**
-   * Проверка является ли ячейка невалидной зоной для размещения корабля
-   * @param row - Буква строки
-   * @param col - Номер столбца
-   * @returns true если ячейка невалидна для размещения, иначе false
-   */
   isInvalidDropZone(row: string, col: number): boolean {
     if (!this.draggedShip || !this.hoveredCell) return false;
 
@@ -690,15 +517,6 @@ export class PlacementUserPageComponent {
            !this.canPlaceShip(this.draggedShip, this.hoveredCell.row, this.hoveredCell.col);
   }
 
-  // ==================== МЕТОДЫ РАСЧЕТА ПОЗИЦИЙ ====================
-
-  /**
-   * Расчет всех позиций корабля исходя из начальной точки и ориентации
-   * @param size - Размер корабля
-   * @param startRow - Начальная строка
-   * @param startCol - Начальный столбец
-   * @returns Массив позиций корабля
-   */
   getShipPositions(size: number, startRow: string, startCol: number): { row: string, col: number }[] {
     const positions = [];
     const startRowIndex = this.rows.indexOf(startRow);
@@ -707,7 +525,6 @@ export class PlacementUserPageComponent {
       const shouldFlip = this.shouldFlipHorizontal(startCol, size);
 
       if (shouldFlip) {
-        // Размещение вправо от начальной точки
         for (let i = 0; i < size; i++) {
           positions.push({
             row: startRow,
@@ -715,7 +532,6 @@ export class PlacementUserPageComponent {
           });
         }
       } else {
-        // Размещение влево от начальной точки
         for (let i = 0; i < size; i++) {
           positions.push({
             row: startRow,
@@ -727,7 +543,6 @@ export class PlacementUserPageComponent {
       const shouldFlip = this.shouldFlipVertical(startRowIndex, size);
 
       if (shouldFlip) {
-        // Размещение вниз от начальной точки
         for (let i = 0; i < size; i++) {
           if (startRowIndex + i < this.rows.length) {
             positions.push({
@@ -737,7 +552,6 @@ export class PlacementUserPageComponent {
           }
         }
       } else {
-        // Размещение вверх от начальной точки
         for (let i = 0; i < size; i++) {
           if (startRowIndex - i >= 0) {
             positions.push({
@@ -752,46 +566,26 @@ export class PlacementUserPageComponent {
     return positions;
   }
 
-  /**
-   * Определение направления размещения для горизонтальной ориентации
-   * @param startCol - Начальный столбец
-   * @param size - Размер корабля
-   * @returns true если размещать вправо, false если влево
-   */
   shouldFlipHorizontal(startCol: number, size: number): boolean {
     if (startCol <= size) {
-      return true; // Вправо, если у левого края
+      return true;
     }
     if (startCol >= this.columns.length - size + 1) {
-      return false; // Влево, если у правого края
+      return false;
     }
-    return true; // По умолчанию вправо
+    return true;
   }
 
-  /**
-   * Определение направления размещения для вертикальной ориентации
-   * @param startRowIndex - Индекс начальной строки
-   * @param size - Размер корабля
-   * @returns true если размещать вниз, false если вверх
-   */
   shouldFlipVertical(startRowIndex: number, size: number): boolean {
     if (startRowIndex < size) {
-      return true; // Вниз, если у верхнего края
+      return true;
     }
     if (startRowIndex >= this.rows.length - size) {
-      return false; // Вверх, если у нижнего края
+      return false;
     }
-    return true; // По умолчанию вниз
+    return true;
   }
 
-  // ==================== МЕТОДЫ РАЗМЕЩЕНИЯ КОРАБЛЕЙ ====================
-
-  /**
-   * Размещение корабля на игровом поле
-   * @param ship - Объект корабля
-   * @param startRow - Начальная строка
-   * @param startCol - Начальный столбец
-   */
   placeShip(ship: any, startRow: string, startCol: number) {
     const positions = this.getShipPositions(ship.size, startRow, startCol);
 
@@ -805,11 +599,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Случайное размещение корабля на поле
-   * @param size - Размер корабля
-   * @param type - Тип корабля
-   */
   placeShipRandomly(size: number, type: string) {
     let placed = false;
     let attempts = 0;
@@ -832,27 +621,20 @@ export class PlacementUserPageComponent {
     }
   }
 
-  // ==================== МЕТОДЫ СОХРАНЕНИЯ И ЗАГРУЗКИ ====================
-
-  /**
-   * Сохранение текущей расстановки кораблей
-   * Выполняет проверки на валидность и уникальность названия
-   */
   savePlacement() {
     if (!this.hasAtLeastOneShip()) {
-      alert('Нельзя сохранить пустую расстановку!');
+      this.showMessage('Сохранение расстановки', 'Нельзя сохранить пустую расстановку!');
       return;
     }
 
     const trimmedName = this.newPlacementName.trim();
     if (!trimmedName) {
-      alert('Введите название расстановки!');
+      this.showMessage('Сохранение расстановки', 'Введите название расстановки!');
       return;
     }
 
-    // Проверка уникальности названия
     if (!this.isPlacementNameUnique(trimmedName)) {
-      alert('Расстановка с таким названием уже существует! Выберите другое название.');
+      this.showMessage('Сохранение расстановки', 'Расстановка с таким названием уже существует! Выберите другое название.');
       return;
     }
 
@@ -870,26 +652,20 @@ export class PlacementUserPageComponent {
     this.saveToLocalStorage();
     this.closeSavePopup();
 
-    alert(`Расстановка "${newPlacement.name}" успешно сохранена!`);
+    this.showMessage('Сохранение расстановки', `Расстановка "${newPlacement.name}" успешно сохранена!`);
     console.log('Сохраненная расстановка:', newPlacement);
   }
 
-  /**
-   * Сохранение расстановок в localStorage с привязкой к пользователю
-   */
   private saveToLocalStorage() {
     try {
       const key = `battleshipPlacements_${this.userId}`;
       localStorage.setItem(key, JSON.stringify(this.userPlacements));
     } catch (error) {
       console.error('Ошибка при сохранении в localStorage:', error);
-      alert('Произошла ошибка при сохранении расстановки.');
+      this.showMessage('Ошибка сохранения', 'Произошла ошибка при сохранении расстановки.', false);
     }
   }
 
-  /**
-   * Загрузка пользовательских расстановок из localStorage
-   */
   loadUserPlacements() {
     try {
       const key = `battleshipPlacements_${this.userId}`;
@@ -909,10 +685,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Загрузка пользовательской расстановки из списка сохраненных
-   * @param placement - Сохраненная расстановка для загрузки
-   */
   loadUserPlacement(placement: UserPlacement) {
     this.clearBoard();
 
@@ -925,13 +697,9 @@ export class PlacementUserPageComponent {
     });
 
     this.closeLoadPopup();
-    console.log(`Загружена пользовательская расстановка: ${placement.name}`);
+    this.showMessage('Загрузка расстановки', `Загружена пользовательская расстановка: ${placement.name}`);
   }
 
-  /**
-   * Конвертация текущей расстановки в формат для отправки на сервер
-   * @returns Массив размещений кораблей в формате сервера
-   */
   private convertToServerFormat(): ShipPlacement[] {
     const serverPlacements: ShipPlacement[] = [];
 
@@ -941,9 +709,8 @@ export class PlacementUserPageComponent {
         const lastPosition = ship.positions[ship.positions.length - 1];
 
         const row = this.rows.indexOf(firstPosition.row);
-        const col = firstPosition.col - 1; // Конвертация в 0-based индекс
+        const col = firstPosition.col - 1;
 
-        // Определение ориентации
         const vertical = firstPosition.row !== lastPosition.row;
 
         serverPlacements.push({
@@ -959,10 +726,6 @@ export class PlacementUserPageComponent {
     return serverPlacements;
   }
 
-  /**
-   * Загрузка расстановки из формата сервера (черновик)
-   * @param placements - Массив размещений кораблей в формате сервера
-   */
   private loadFromServerFormat(placements: ShipPlacement[]) {
     this.clearBoard();
 
@@ -973,7 +736,7 @@ export class PlacementUserPageComponent {
 
         for (let i = 0; i < serverPlacement.size; i++) {
           const rowIndex = serverPlacement.row + (serverPlacement.vertical ? i : 0);
-          const col = serverPlacement.col + (serverPlacement.vertical ? 0 : i) + 1; // Конвертация обратно в 1-based
+          const col = serverPlacement.col + (serverPlacement.vertical ? 0 : i) + 1;
 
           if (rowIndex < this.rows.length && col <= this.columns.length) {
             positions.push({
@@ -989,12 +752,6 @@ export class PlacementUserPageComponent {
     });
   }
 
-  // ==================== СТРАТЕГИИ АВТОМАТИЧЕСКОЙ РАССТАНОВКИ ====================
-
-  /**
-   * Загрузка стратегии автоматической расстановки кораблей
-   * @param strategy - Название стратегии ('coastal', 'diagonal', 'halfField', 'spread')
-   */
   loadStrategy(strategy: string) {
     this.clearBoard();
 
@@ -1014,12 +771,19 @@ export class PlacementUserPageComponent {
     }
 
     this.closeLoadPopup();
-    console.log(`Загружена стратегия: ${strategy}`);
+    this.showMessage('Стратегия загружена', `Загружена стратегия: ${this.getStrategyName(strategy)}`);
   }
 
-  /**
-   * Береговая стратегия - размещение кораблей вдоль границ поля
-   */
+  private getStrategyName(strategy: string): string {
+    const strategyNames: {[key: string]: string} = {
+      'coastal': 'Береговая',
+      'diagonal': 'Диагональная',
+      'halfField': 'Полупольная',
+      'spread': 'Разброс'
+    };
+    return strategyNames[strategy] || strategy;
+  }
+
   private placeShipsCoastal(): void {
     const shipTypes = [...SHIP_TYPES];
     shipTypes.sort((a, b) => b.size - a.size);
@@ -1036,41 +800,40 @@ export class PlacementUserPageComponent {
           if (isBorder) {
             const side = Math.floor(Math.random() * 4);
             switch(side) {
-              case 0: // Верхняя граница
+              case 0:
                 row = this.rows[0];
                 col = Math.floor(Math.random() * BOARD_SIZE) + 1;
                 break;
-              case 1: // Правая граница
+              case 1:
                 row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
                 col = BOARD_SIZE;
                 break;
-              case 2: // Нижняя граница
+              case 2:
                 row = this.rows[BOARD_SIZE - 1];
                 col = Math.floor(Math.random() * BOARD_SIZE) + 1;
                 break;
-              case 3: // Левая граница
+              case 3:
                 row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
                 col = 1;
                 break;
             }
           } else {
-            // Прибрежная зона (2 клетки от границы)
             const borderZone = 2;
             const randomBorder = Math.floor(Math.random() * 4);
             switch(randomBorder) {
-              case 0: // Верхняя прибрежная зона
+              case 0:
                 row = this.rows[Math.floor(Math.random() * borderZone)];
                 col = Math.floor(Math.random() * BOARD_SIZE) + 1;
                 break;
-              case 1: // Правая прибрежная зона
+              case 1:
                 row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
                 col = BOARD_SIZE - Math.floor(Math.random() * borderZone);
                 break;
-              case 2: // Нижняя прибрежная зона
+              case 2:
                 row = this.rows[BOARD_SIZE - 1 - Math.floor(Math.random() * borderZone)];
                 col = Math.floor(Math.random() * BOARD_SIZE) + 1;
                 break;
-              case 3: // Левая прибрежная зона
+              case 3:
                 row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
                 col = 1 + Math.floor(Math.random() * borderZone);
                 break;
@@ -1097,9 +860,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Диагональная стратегия - размещение кораблей вдоль диагоналей поля
-   */
   private placeShipsDiagonal(): void {
     const shipTypes = [...SHIP_TYPES];
     shipTypes.sort((a, b) => b.size - a.size);
@@ -1116,13 +876,11 @@ export class PlacementUserPageComponent {
           let rowIndex = 0;
 
           if (useMainDiagonal) {
-            // Главная диагональ (сверху-слева направо-вниз)
             rowIndex = Math.floor(Math.random() * (BOARD_SIZE - shipType.size + 1));
             const diagonalOffset = Math.floor(Math.random() * 3) - 1;
             row = this.rows[rowIndex];
             col = rowIndex + 1 + diagonalOffset;
           } else {
-            // Побочная диагональ (сверху-справа налево-вниз)
             rowIndex = Math.floor(Math.random() * (BOARD_SIZE - shipType.size + 1));
             const diagonalOffset = Math.floor(Math.random() * 3) - 1;
             row = this.rows[rowIndex];
@@ -1151,9 +909,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Полупольная стратегия - размещение кораблей в одной половине поля
-   */
   private placeShipsHalfField(): void {
     const shipTypes = [...SHIP_TYPES];
     shipTypes.sort((a, b) => b.size - a.size);
@@ -1170,24 +925,18 @@ export class PlacementUserPageComponent {
           let row = '', col = 0;
 
           if (isVerticalSplit) {
-            // Вертикальное разделение поля
             if (half === 'first') {
-              // Левая половина
               row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
               col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + 1;
             } else {
-              // Правая половина
               row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
               col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + Math.floor(BOARD_SIZE / 2) + 1;
             }
           } else {
-            // Горизонтальное разделение поля
             if (half === 'first') {
-              // Верхняя половина
               row = this.rows[Math.floor(Math.random() * (BOARD_SIZE / 2))];
               col = Math.floor(Math.random() * BOARD_SIZE) + 1;
             } else {
-              // Нижняя половина
               row = this.rows[Math.floor(Math.random() * (BOARD_SIZE / 2)) + Math.floor(BOARD_SIZE / 2)];
               col = Math.floor(Math.random() * BOARD_SIZE) + 1;
             }
@@ -1213,9 +962,6 @@ export class PlacementUserPageComponent {
     }
   }
 
-  /**
-   * Стратегия разброса - равномерное размещение кораблей по всему полю
-   */
   private placeShipsSpread(): void {
     const shipTypes = [...SHIP_TYPES];
     shipTypes.sort((a, b) => b.size - a.size);
@@ -1229,7 +975,6 @@ export class PlacementUserPageComponent {
           let row = '', col = 0;
           let isValidPosition = false;
 
-          // Поиск позиции, не находящейся на границе, в центре или диагонали
           while (!isValidPosition && attempts < 100) {
             row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
             col = Math.floor(Math.random() * BOARD_SIZE) + 1;
@@ -1241,7 +986,7 @@ export class PlacementUserPageComponent {
 
             isValidPosition = !isBorder && !isCenter && !isDiagonal;
             if (Math.random() > 0.2) {
-              isValidPosition = true; // 20% шанс разместить в любой позиции
+              isValidPosition = true;
             }
 
             attempts++;
@@ -1265,5 +1010,34 @@ export class PlacementUserPageComponent {
         }
       }
     }
+  }
+
+  closeCancelReadyPopup() {
+    this.showCancelReadyPopup = false;
+  }
+
+  showMessage(title: string, text: string, autoClose: boolean = true): Promise<void> {
+    return new Promise((resolve) => {
+      this.messageTitle = title;
+      this.messageText = text;
+      this.showMessagePopup = true;
+      
+      if (autoClose) {
+        setTimeout(() => {
+          if (this.showMessagePopup) {
+            this.closeMessagePopup();
+          }
+          resolve();
+        }, 5000);
+      } else {
+        resolve();
+      }
+    });
+  }
+
+  closeMessagePopup() {
+    this.showMessagePopup = false;
+    this.messageTitle = '';
+    this.messageText = '';
   }
 }
