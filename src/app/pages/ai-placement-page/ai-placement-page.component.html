@@ -1,0 +1,240 @@
+<div class="placement-container">
+  <!-- Заголовок - используем h2 вместо h1 для соответствия CSS -->
+  <h2>Расстановка кораблей - Одиночная игра</h2>
+
+  <!-- Информация об игроке -->
+  <div class="player-info" *ngIf="currentPlayer">
+    <span>Игрок: {{currentPlayer.username || 'Аноним'}}</span>
+  </div>
+
+  <div class="main-content">
+    <!-- Левая панель - игровое поле -->
+    <div class="game-board-section">
+      <div class="game-board"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)">
+        <div class="board-header">
+          <div class="empty-cell"></div>
+          <div *ngFor="let col of columns" class="column-header">{{col}}</div>
+        </div>
+
+        <div *ngFor="let row of rows; let rowIndex = index" class="board-row">
+          <div class="row-header">{{row}}</div>
+          <div *ngFor="let col of columns"
+               class="cell"
+               [class.has-ship]="hasShip(row, col)"
+               [class.valid-drop]="isValidDropZone(row, col)"
+               [class.invalid-drop]="isInvalidDropZone(row, col)"
+               [attr.data-row]="row"
+               [attr.data-col]="col">
+            <div *ngIf="hasShip(row, col)" class="ship-cell"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="action-buttons">
+        <button class="btn" (click)="generateRandom()">Случайная расстановка</button>
+        <button class="btn coral" (click)="requestClearBoard()">Очистить поле</button>
+        <button class="btn" (click)="openSavePopup()">Сохранить расстановку</button>
+        <button class="btn" (click)="openLoadPopup()">Загрузить расстановку</button>
+      </div>
+    </div>
+
+    <!-- Правая панель - корабли и управление -->
+    <div class="sidebar">
+      <div class="ships-panel">
+        <h3>Корабли для размещения</h3>
+
+        <!-- Информация об ориентации -->
+        <div class="orientation-info">
+          <div class="orientation-label">Ориентация:</div>
+          <div class="orientation-value">{{isHorizontal ? 'Горизонтально' : 'Вертикально'}}</div>
+          <div class="orientation-hint">Кликните для смены ориентации</div>
+        </div>
+
+        <!-- Кнопка смены ориентации -->
+        <div class="button-container">
+          <button class="btn" (click)="toggleOrientation()">
+            Сменить ориентацию
+          </button>
+        </div>
+
+        <!-- Список кораблей -->
+        <div class="ships-list">
+          <div *ngFor="let ship of ships"
+               class="ship draggable"
+               [class.vertical]="!isHorizontal"
+               [class.placed]="ship.placed"
+               [attr.data-size]="ship.size"
+               [attr.data-type]="ship.type"
+               draggable="true"
+               (dragstart)="onDragStart($event)">
+            <div *ngFor="let i of [].constructor(ship.size)"
+                 class="ship-cell"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="ships-panel">
+        <h3>Стратегии</h3>
+        <div class="button-container">
+          <button class="btn" (click)="loadStrategy('coastal')">Береговая</button>
+          <button class="btn" (click)="loadStrategy('diagonal')">Диагональная</button>
+          <button class="btn" (click)="loadStrategy('halfField')">Полупольная</button>
+          <button class="btn" (click)="loadStrategy('spread')">Разброс</button>
+        </div>
+
+        <h3>Уровень сложности</h3>
+        <div class="difficulty-info">
+          <p>Текущий: {{getDifficultyLabel(selectedDifficulty)}}</p>
+          <div class="button-container">
+            <button class="btn" (click)="showDifficultySelection()">Изменить</button>
+          </div>
+        </div>
+
+        <!-- Готовность -->
+        <div *ngIf="!isPlayerReady" class="ready-section">
+          <div class="button-container">
+            <button class="btn primary ready-button"
+                    (click)="playerReady()"
+                    [disabled]="!isAllShipsPlaced()">
+              {{isAllShipsPlaced() ? 'Готов к игре!' : 'Разместите все корабли'}}
+            </button>
+          </div>
+          <div class="ships-status">
+            <p *ngIf="!isAllShipsPlaced()">
+              Осталось разместить: {{getTotalRemainingShipsCount()}} кораблей
+            </p>
+          </div>
+        </div>
+
+        <div *ngIf="isPlayerReady" class="ready-section">
+          <div class="ready-status">
+            <h4>✓ Вы готовы к игре!</h4>
+            <p>Уровень: {{getDifficultyLabel(selectedDifficulty)}}</p>
+          </div>
+          <div class="button-container">
+            <button class="btn primary" (click)="startGameWithAI()">Начать игру с ИИ</button>
+            <button class="btn cancel-button" (click)="cancelReady()">Изменить расстановку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап сообщения -->
+  <div class="popup-overlay" *ngIf="showMessagePopup" (click)="closeMessagePopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>{{messageTitle}}</h3>
+        <button class="popup-close" (click)="closeMessagePopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <p>{{messageText}}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап сохранения -->
+  <div class="popup-overlay" *ngIf="showSavePopup" (click)="closeSavePopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Сохранить расстановку</h3>
+        <button class="popup-close" (click)="closeSavePopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <form class="save-form">
+          <label for="placement-name">Название расстановки:</label>
+          <input id="placement-name"
+                 type="text"
+                 class="save-input"
+                 [(ngModel)]="newPlacementName"
+                 placeholder="Введите название"
+                 [ngModelOptions]="{standalone: true}">
+          <div class="save-actions">
+            <button class="btn primary" (click)="savePlacement()">Сохранить</button>
+            <button class="btn" (click)="closeSavePopup()">Отмена</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап загрузки -->
+  <div class="popup-overlay" *ngIf="showLoadPopup" (click)="closeLoadPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Загрузить расстановку</h3>
+        <button class="popup-close" (click)="closeLoadPopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="strategies-section" *ngIf="strategies?.length">
+          <h4>Стратегии расстановки</h4>
+          <div class="strategy-options">
+            <div *ngFor="let strategy of strategies"
+                 class="strategy-btn"
+                 (click)="loadStrategy(strategy.id)">
+              <span class="strategy-name">{{strategy.name}}</span>
+              <span class="strategy-desc">{{strategy.description}}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-placements-section" *ngIf="userPlacements?.length">
+          <h4>Сохраненные расстановки</h4>
+          <div class="user-placements-list">
+            <div *ngFor="let placement of userPlacements" class="placement-item">
+              <div class="placement-name">{{placement.name}}</div>
+              <div class="placement-date">{{placement.date | date:'dd.MM.yyyy HH:mm'}}</div>
+              <button class="placement-load-btn" (click)="loadUserPlacement(placement)">Загрузить</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-placements" *ngIf="!strategies?.length && !userPlacements?.length">
+          <p>Нет доступных расстановок</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап подтверждения очистки -->
+  <div class="popup-overlay" *ngIf="showClearConfirmation" (click)="cancelClear()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Очистить поле?</h3>
+      </div>
+      <div class="popup-body">
+        <p>Вы уверены, что хотите удалить все корабли с поля?</p>
+        <div class="clear-actions">
+          <button class="btn coral" (click)="confirmClear()">Да, очистить</button>
+          <button class="btn" (click)="cancelClear()">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Попап выбора сложности -->
+  <div class="popup-overlay" *ngIf="showDifficultyPopup" (click)="closeDifficultyPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Выберите уровень сложности</h3>
+        <button class="popup-close" (click)="closeDifficultyPopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="difficulty-options">
+          <div *ngFor="let level of difficultyLevels"
+               class="strategy-btn"
+               [class.selected]="level.value === selectedDifficulty"
+               (click)="changeDifficulty(level.value)">
+            <span class="strategy-name">{{level.label}}</span>
+            <span class="strategy-desc">{{level.description}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

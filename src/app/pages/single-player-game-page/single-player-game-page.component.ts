@@ -19,8 +19,8 @@ interface SinglePlayerGameState {
 
 @Component({
   selector: 'app-single-player-field',
-  templateUrl: './single-player-field.component.html',
-  styleUrls: ['./single-player-field.component.scss'],
+  templateUrl: './single-player-game-page.component.html',
+  styleUrls: ['./single-player-game-page.component.scss'],
   standalone: true,
   imports: [CommonModule]
 })
