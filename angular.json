@@ -80,14 +80,16 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "port": 4201,
-            "buildTarget": "battleship:build:development"
+            "buildTarget": "battleship:build:development",
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {
               "buildTarget": "battleship:build:production"
             },
             "development": {
-              "buildTarget": "battleship:build:development"
+              "buildTarget": "battleship:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

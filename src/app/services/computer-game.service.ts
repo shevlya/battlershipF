@@ -1,9 +1,11 @@
-// computer-game.service.ts - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// computer-game.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 
+// Экспортируем интерфейсы
 export interface ShipPlacementDto {
   shipId: number;
   size: number;
@@ -36,26 +38,29 @@ export interface ShotResponse {
   message: string;
 
   // Компьютерный ход
-  computerRow: number;
-  computerCol: number;
-  computerHit: boolean;
-  computerSunk: boolean;
-  computerSunkShipId: number;
+  computerRow?: number;
+  computerCol?: number;
+  computerHit?: boolean;
+  computerSunk?: boolean;
+  computerSunkShipId?: number;
 
   // Статистика
-  playerShots: number;
-  playerHits: number;
-  computerShots: number;
-  computerHits: number;
-  playerShipsRemaining: number;
-  computerShipsRemaining: number;
+  playerShots?: number;
+  playerHits?: number;
+  computerShots?: number;
+  computerHits?: number;
+  playerShipsRemaining?: number;
+  computerShipsRemaining?: number;
+
+  // Очередь хода
+  playerTurn?: boolean;
 }
 
 export interface GameStateResponse {
   gameId: number;
   status: string; // waiting, active, completed, cancelled
   playerTurn: boolean;
-  lastMoveTime: string;
+  lastMoveTime?: string;
 
   // Игровые поля
   playerBoard: string[][]; // SHIP, HIT, MISS, EMPTY
@@ -74,8 +79,9 @@ export interface GameStateResponse {
   providedIn: 'root'
 })
 export class ComputerGameService {
-  private readonly apiUrl = 'http://localhost:8080/api/computer-games'; // ИЗМЕНЕНО
-  private readonly wsUrl = 'ws://localhost:8080/ws/computer-games'; // ИЗМЕНЕНО
+  // ИСПРАВЬТЕ: URL должен совпадать с контроллером (без 's' на конце!)
+  private readonly apiUrl = 'http://localhost:8080/api/computer-game'; // БЕЗ 's' на конце!
+  private readonly wsUrl = 'ws://localhost:8080/ws/computer-games';
 
   private socket$!: WebSocketSubject<any>;
   private readonly gameStateSubject = new BehaviorSubject<any>(null);
@@ -85,6 +91,7 @@ export class ComputerGameService {
   }
 
   private connectWebSocket() {
+    console.log('WebSocket: Connecting to', this.wsUrl);
     this.socket$ = webSocket(this.wsUrl);
 
     this.socket$.subscribe(
@@ -101,44 +108,110 @@ export class ComputerGameService {
 
   // Создать новую игру
   createGame(playerId: number, request: ComputerGameStartRequest): Observable<any> {
-    const createRequest: ComputerGameCreateRequest = {
-      playerId: playerId,
-      startRequest: request
-    };
-    return this.http.post(`${this.apiUrl}`, createRequest);
+    console.log('=== CREATE GAME ===');
+    console.log('Player ID:', playerId);
+    console.log('Request:', request);
+
+    const url = `${this.apiUrl}/start?playerId=${playerId}`;
+    console.log('URL:', url);
+
+    return this.http.post(url, request).pipe(
+      tap(response => console.log('Create game response:', response)),
+      catchError(error => {
+        console.error('Create game error:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.message);
+        console.error('Error body:', error.error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Настроить игру (расставить корабли)
   setupGame(gameId: number, request: ComputerGameStartRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${gameId}/setup`, request);
+    console.log('=== SETUP GAME ===');
+    console.log('Game ID:', gameId);
+
+    const url = `${this.apiUrl}/${gameId}/setup`;
+    console.log('URL:', url);
+
+    return this.http.post(url, request).pipe(
+      tap(response => console.log('Setup game response:', response)),
+      catchError(error => {
+        console.error('Setup game error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Сделать выстрел
   makeShot(gameId: number, row: number, col: number): Observable<ShotResponse> {
+    console.log('=== MAKE SHOT ===');
+    console.log('Game ID:', gameId, 'at [', row, ',', col, ']');
+
+    const url = `${this.apiUrl}/${gameId}/shot`;
+    console.log('URL:', url);
+
     const request: ShotRequest = { gameId, row, col };
-    return this.http.post<ShotResponse>(`${this.apiUrl}/${gameId}/shot`, request);
+    return this.http.post<ShotResponse>(url, request).pipe(
+      tap(response => console.log('Shot response:', response)),
+      catchError(error => {
+        console.error('Shot error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Получить состояние игры
-  getGameState(gameId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${gameId}/state`);
+  getGameState(gameId: number): Observable<GameStateResponse> {
+    console.log('=== GET GAME STATE ===');
+    console.log('Game ID:', gameId);
+
+    const url = `${this.apiUrl}/${gameId}/state`;
+    console.log('URL:', url);
+
+    return this.http.get<GameStateResponse>(url).pipe(
+      tap(response => console.log('Game state response:', response)),
+      catchError(error => {
+        console.error('Get game state error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Сдаться
   surrender(gameId: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${gameId}/surrender`, {});
+    console.log('=== SURRENDER ===');
+    console.log('Game ID:', gameId);
+
+    const url = `${this.apiUrl}/${gameId}/surrender`;
+    console.log('URL:', url);
+
+    return this.http.post<void>(url, {}).pipe(
+      tap(() => console.log('Surrender successful')),
+      catchError(error => {
+        console.error('Surrender error:', error);
+        console.error('Full error:', JSON.stringify(error, null, 2));
+        return throwError(() => error);
+      })
+    );
   }
 
   // Подписаться на WebSocket
   subscribeToGame(gameId: number) {
-    // Подключаемся к WebSocket при первой подписке
+    console.log('=== SUBSCRIBE TO GAME ===');
+    console.log('Game ID:', gameId);
+
     if (!this.socket$ || this.socket$.closed) {
       this.connectWebSocket();
     }
 
     setTimeout(() => {
       const message = { type: 'SUBSCRIBE', gameId };
-      this.socket$.next(message);
+      console.log('Sending WebSocket message:', message);
+      if (this.socket$) {
+        this.socket$.next(message);
+      }
     }, 100);
   }
 
@@ -152,5 +225,15 @@ export class ComputerGameService {
     if (this.socket$) {
       this.socket$.complete();
     }
+  }
+
+  // Вспомогательный метод для отладки
+  logCurrentState() {
+    console.log('ComputerGameService state:', {
+      apiUrl: this.apiUrl,
+      wsUrl: this.wsUrl,
+      hasSocket: !!this.socket$,
+      socketClosed: this.socket$?.closed
+    });
   }
 }
