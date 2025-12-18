@@ -1,16 +1,16 @@
-// computer-game.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import {ComputerGame} from "./computer-game.interface";
 
-// Экспортируем интерфейсы
+// DTO интерфейсы
 export interface ShipPlacementDto {
   shipId: number;
   size: number;
-  row: number; // 0-9
-  col: number; // 0-9
+  row: number;
+  col: number;
   vertical: boolean;
 }
 
@@ -19,54 +19,33 @@ export interface ComputerGameStartRequest {
   playerShips: ShipPlacementDto[];
 }
 
-export interface ComputerGameCreateRequest {
-  playerId: number;
-  startRequest: ComputerGameStartRequest;
-}
-
-export interface ShotRequest {
-  gameId: number;
-  row: number;
-  col: number;
-}
-
 export interface ShotResponse {
   hit: boolean;
   sunk: boolean;
   sunkShipId: number;
   gameOver: boolean;
   message: string;
-
-  // Компьютерный ход
   computerRow?: number;
   computerCol?: number;
   computerHit?: boolean;
   computerSunk?: boolean;
   computerSunkShipId?: number;
-
-  // Статистика
   playerShots?: number;
   playerHits?: number;
   computerShots?: number;
   computerHits?: number;
   playerShipsRemaining?: number;
   computerShipsRemaining?: number;
-
-  // Очередь хода
   playerTurn?: boolean;
 }
 
 export interface GameStateResponse {
   gameId: number;
-  status: string; // waiting, active, completed, cancelled
+  status: string;
   playerTurn: boolean;
   lastMoveTime?: string;
-
-  // Игровые поля
-  playerBoard: string[][]; // SHIP, HIT, MISS, EMPTY
-  computerBoard: string[][]; // SHIP, HIT, MISS, EMPTY
-
-  // Статистика
+  playerBoard: string[][];
+  computerBoard: string[][];
   playerHits?: number;
   playerMisses?: number;
   computerHits?: number;
@@ -79,49 +58,41 @@ export interface GameStateResponse {
   providedIn: 'root'
 })
 export class ComputerGameService {
-  // ИСПРАВЬТЕ: URL должен совпадать с контроллером (без 's' на конце!)
-  private readonly apiUrl = 'http://localhost:8080/api/computer-game'; // БЕЗ 's' на конце!
-  private readonly wsUrl = 'ws://localhost:8080/ws/computer-games';
+  // Используйте относительный путь, если настроен прокси
+  private readonly apiUrl = '/api/computer-game'; // относительный путь для прокси
+  // Или абсолютный, если нет прокси:
+  // private readonly apiUrl = 'http://localhost:8080/api/computer-game';
+
+  private readonly wsUrl = 'ws://localhost:8080/ws/computer-game';
 
   private socket$!: WebSocketSubject<any>;
+  private isConnected = false;
   private readonly gameStateSubject = new BehaviorSubject<any>(null);
 
-  constructor(private readonly http: HttpClient) {
-    // Не подключаемся автоматически, подключимся при старте игры
-  }
-
-  private connectWebSocket() {
-    console.log('WebSocket: Connecting to', this.wsUrl);
-    this.socket$ = webSocket(this.wsUrl);
-
-    this.socket$.subscribe(
-      (message) => {
-        console.log('WebSocket message received:', message);
-        if (message.type === 'GAME_UPDATE' || message.type === 'SHOT_RESULT') {
-          this.gameStateSubject.next(message.data || message);
-        }
-      },
-      (error) => console.error('WebSocket error:', error),
-      () => console.log('WebSocket connection closed')
-    );
-  }
+  constructor(private readonly http: HttpClient) {}
 
   // Создать новую игру
-  createGame(playerId: number, request: ComputerGameStartRequest): Observable<any> {
-    console.log('=== CREATE GAME ===');
+  createComputerGame(playerId: number, request: ComputerGameStartRequest): Observable<any> {
+    console.log('=== CREATE COMPUTER GAME ===');
     console.log('Player ID:', playerId);
     console.log('Request:', request);
 
+    // Используйте /start или /create - смотрите, какой endpoint работает
     const url = `${this.apiUrl}/start?playerId=${playerId}`;
+    // ИЛИ: const url = `${this.apiUrl}/create?playerId=${playerId}`;
+
     console.log('URL:', url);
 
     return this.http.post(url, request).pipe(
-      tap(response => console.log('Create game response:', response)),
+      tap(response => {
+        console.log('Create game response:', response);
+        // Сохраняем gameId
+        if (response && response.gameId) {
+          localStorage.setItem('currentGameId', response.gameId.toString());
+        }
+      }),
       catchError(error => {
         console.error('Create game error:', error);
-        console.error('Error status:', error.status);
-        console.error('Error message:', error.message);
-        console.error('Error body:', error.error);
         return throwError(() => error);
       })
     );
@@ -136,7 +107,9 @@ export class ComputerGameService {
     console.log('URL:', url);
 
     return this.http.post(url, request).pipe(
-      tap(response => console.log('Setup game response:', response)),
+      tap(response => {
+        console.log('Setup game response:', response);
+      }),
       catchError(error => {
         console.error('Setup game error:', error);
         return throwError(() => error);
@@ -152,7 +125,7 @@ export class ComputerGameService {
     const url = `${this.apiUrl}/${gameId}/shot`;
     console.log('URL:', url);
 
-    const request: ShotRequest = { gameId, row, col };
+    const request = { row, col }; // Согласно контроллеру: @RequestBody ShotRequest request
     return this.http.post<ShotResponse>(url, request).pipe(
       tap(response => console.log('Shot response:', response)),
       catchError(error => {
@@ -191,49 +164,79 @@ export class ComputerGameService {
       tap(() => console.log('Surrender successful')),
       catchError(error => {
         console.error('Surrender error:', error);
-        console.error('Full error:', JSON.stringify(error, null, 2));
         return throwError(() => error);
       })
     );
   }
 
-  // Подписаться на WebSocket
-  subscribeToGame(gameId: number) {
-    console.log('=== SUBSCRIBE TO GAME ===');
-    console.log('Game ID:', gameId);
-
-    if (!this.socket$ || this.socket$.closed) {
+  /**
+   * Получить историю игр пользователя
+   */
+  getPlayerGames(playerId: string): Observable<ComputerGame[]> {
+    return this.http.get<ComputerGame[]>(
+      `${this.apiUrl}/computer-games/player/${playerId}/history`
+    );
+  }
+  /**
+   * Подписаться на игру через WebSocket
+   */
+  subscribeToGame(gameId: number): void {
+    if (!this.isConnected || !this.socket$ || this.socket$.closed) {
       this.connectWebSocket();
     }
 
     setTimeout(() => {
-      const message = { type: 'SUBSCRIBE', gameId };
-      console.log('Sending WebSocket message:', message);
-      if (this.socket$) {
+      if (this.socket$ && !this.socket$.closed) {
+        const message = { type: 'SUBSCRIBE', gameId };
         this.socket$.next(message);
       }
-    }, 100);
+    }, 500);
   }
 
-  // Получить поток обновлений состояния игры
+  /**
+   * Подключиться к WebSocket
+   */
+  private connectWebSocket(): void {
+    this.socket$ = webSocket(this.wsUrl);
+    this.isConnected = true;
+
+    this.socket$.subscribe({
+      next: (message) => this.gameStateSubject.next(message),
+      error: (err) => {
+        console.error('WebSocket error:', err);
+        this.isConnected = false;
+      },
+      complete: () => {
+        console.log('WebSocket connection closed');
+        this.isConnected = false;
+      }
+    });
+  }
+
+  /**
+   * Получить обновления состояния игры через WebSocket
+   */
   getGameStateUpdates(): Observable<any> {
     return this.gameStateSubject.asObservable();
   }
 
-  // Закрыть WebSocket соединение
-  disconnect() {
-    if (this.socket$) {
-      this.socket$.complete();
+  /**
+   * Отписаться от WebSocket
+   */
+  unsubscribeFromGame(gameId: number): void {
+    if (this.socket$ && !this.socket$.closed) {
+      const message = { type: 'UNSUBSCRIBE', gameId };
+      this.socket$.next(message);
     }
   }
 
-  // Вспомогательный метод для отладки
-  logCurrentState() {
-    console.log('ComputerGameService state:', {
-      apiUrl: this.apiUrl,
-      wsUrl: this.wsUrl,
-      hasSocket: !!this.socket$,
-      socketClosed: this.socket$?.closed
-    });
+  /**
+   * Закрыть WebSocket соединение
+   */
+  disconnectWebSocket(): void {
+    if (this.socket$) {
+      this.socket$.complete();
+      this.isConnected = false;
+    }
   }
 }

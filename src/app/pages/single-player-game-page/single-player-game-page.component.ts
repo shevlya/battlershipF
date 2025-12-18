@@ -1,21 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router'; // ДОБАВЬТЕ ЭТОТ ИМПОРТ
-import { ComputerGameService, ShipPlacementDto, ComputerGameStartRequest } from '../../services/computer-game.service';
+import { Router } from '@angular/router';
+import { ComputerGameService } from '../../services/computer-game.service';
 import { Subscription } from 'rxjs';
-
-// Интерфейс для состояния игры против компьютера
-interface SinglePlayerGameState {
-  playerField: string[][];
-  computerField: string[][];
-  playerHits: boolean[][];
-  computerHits: boolean[][];
-  playerShips: number;
-  computerShips: number;
-  isPlayerTurn: boolean;
-  gameStatus: string;
-  lastMoveTime?: string;
-}
+import {  ShipPlacementDto, ComputerGameStartRequest, SinglePlayerGameState } from '../../services/computer-game.interface';
 
 @Component({
   selector: 'app-single-player-field',

@@ -1,20 +1,30 @@
-// two-players-field-page.component.ts
+import { Router } from '@angular/router';
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ComputerGameService, ShipPlacementDto, ComputerGameStartRequest, GameStateResponse } from '../../services/computer-game.service';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { WebSocketService, GameStartNotification } from '../../services/webSocket.service';
+import { Subscription as RxSubscription } from 'rxjs';
 
-// Интерфейс для состояния игры
+// Тип для Stomp подписки
+type StompSubscription = any;
+
 interface GameState {
-  myField: string[][]; // Изменено с number[][] на string[][]
-  opponentField: string[][]; // Изменено с number[][] на string[][]
-  myHits: boolean[][];
-  opponentHits: boolean[][];
-  myShips: number;
-  opponentShips: number;
+  myField: string[][];        // Ваши корабли
+  opponentField: string[][];  // Поле противника с вашими выстрелами (H/M)
+  myHits: string[][];         // Ваши выстрелы (дублирует opponentField)
+  opponentHits: string[][];   // Выстрелы противника (дублирует enemyHits)
+  myShipsLeft: number;
+  opponentShipsLeft: number;
   isMyTurn: boolean;
-  gameStatus: string;
-  lastMoveTime?: string;
+  currentTurnPlayerId: number;
+  gameId: number;
+}
+
+interface GameMoveDTO {
+  gameId: number;
+  playerId: number;
+  row: number;
+  column: number;
 }
 
 @Component({
@@ -25,26 +35,25 @@ interface GameState {
   imports: [CommonModule]
 })
 export class TwoPlayersFieldComponent implements OnChanges, OnInit, OnDestroy {
-  @Input() gameId: number = 0; // Изменено с string на number
+  gameId: string = '';
+  private gameIdNum: number = 0;
+  private playerId: number = 0;
   @Input() myName: string = '';
   @Input() opponentName: string = '';
-  @Input() playerId: number = 0; // Добавлено для идентификации игрока
-  @Input() playerShips: ShipPlacementDto[] = []; // Добавлено для расстановки кораблей
-
+  @Input() currentPlayerId: number = 0;
   @Input() gameState: GameState = {
     myField: [],
     opponentField: [],
     myHits: [],
     opponentHits: [],
-    myShips: 10,
-    opponentShips: 10,
+    myShipsLeft: 0,
+    opponentShipsLeft: 0,
     isMyTurn: false,
-    gameStatus: 'waiting'
+    currentTurnPlayerId: 0,
+    gameId: 0
   };
-
   @Output() cellSelected = new EventEmitter<{ row: number; col: number }>();
   @Output() gameAction = new EventEmitter<{ type: string; data?: any }>();
-  @Output() onGameStarted = new EventEmitter<any>();
 
   rows = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К'];
   columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -53,251 +62,240 @@ export class TwoPlayersFieldComponent implements OnChanges, OnInit, OnDestroy {
   showDrawPopup = false;
   showDrawResponsePopup = false;
   showSurrenderPopup = false;
-
   myShotsCount = 0;
   myHitsCount = 0;
-  computerShotsCount = 0;
-  computerHitsCount = 0;
 
-  // Добавленные свойства
-  placementStrategy: string = 'RANDOM';
-  isGameStarted = false;
-  isLoading = false;
-  errorMessage = '';
+  private rxSubscriptions: RxSubscription[] = [];
+  private stompSubscriptions: StompSubscription[] = [];
 
-  private subscriptions: Subscription[] = [];
+  constructor(
+    private route: ActivatedRoute,
+    private webSocketService: WebSocketService,
+    private router: Router
+  ) {}
 
-  constructor(private computerGameService: ComputerGameService) {}
+  ngOnInit() {
+    // 1. Подписываемся на параметры маршрута
+    const paramsSub = this.route.params.subscribe(params => {
+      if (params['gameId']) {
+        this.handleRouteParams(params);
+      }
+    });
+    this.rxSubscriptions.push(paramsSub);
 
-  /**
-  * Получить CSS класс для клетки
-*/
-  getCellClass(row: number, col: number, isMyField: boolean): string {
-    const field = isMyField ? this.myField : this.opponentField;
-    const cell = field[row]?.[col];
-
-    if (!cell) return 'empty';
-
-    switch (cell) {
-      case 'SHIP':
-        return isMyField ? 'ship' : 'empty';
-      case 'HIT':
-        return 'hit';
-      case 'MISS':
-        return 'miss';
-      default:
-        return 'empty';
-    }
-  }
-
-  /**
-   * Проверить, потоплен ли корабль
-   */
-  isShipSunk(row: number, col: number, isMyField: boolean): boolean {
-    const field = isMyField ? this.myField : this.opponentField;
-    const hits = isMyField ? this.myHits : this.opponentHits;
-
-    if (!field[row]?.[col] || field[row][col] !== 'HIT' || !hits[row]?.[col]) {
-      return false;
+    // 2. Проверяем snapshot на случай быстрой навигации
+    const snapshotParams = this.route.snapshot.params;
+    if (snapshotParams['gameId']) {
+      this.handleRouteParams(snapshotParams);
     }
 
-    return this.checkShipSunk(row, col, field, hits);
-  }
-  /**
-   * Проверить, что позиция находится в пределах поля
-   */
-  private isValidPosition(row: number, col: number): boolean {
-    return row >= 0 && row < 10 && col >= 0 && col < 10;
-  }
+    // 3. Проверяем queryParams
+    this.route.queryParams.subscribe(queryParams => {
+      if (queryParams['gameId'] && !this.gameId) {
+        this.gameId = queryParams['gameId'];
+        this.gameIdNum = parseInt(this.gameId, 10);
+        console.log('Получен ID игры из queryParams:', this.gameId);
 
-  private checkShipSunk(row: number, col: number, field: string[][], hits: boolean[][]): boolean {
-    const directions = [
-      { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }
-    ];
+        this.playerId = this.getPlayerId();
+        console.log('Player ID установлен из queryParams:', this.playerId);
 
-    const checked = new Set<string>();
-    let isSunk = true;
-
-    const checkCell = (r: number, c: number) => {
-      const key = `${r},${c}`;
-      if (checked.has(key) || !this.isValidPosition(r, c)) return;
-      checked.add(key);
-
-      if (field[r]?.[c] === 'SHIP' || field[r]?.[c] === 'HIT') {
-        if (!hits[r]?.[c] || field[r][c] !== 'HIT') {
-          isSunk = false;
-          return;
-        }
-
-        for (const dir of directions) {
-          const newRow = r + dir.r;
-          const newCol = c + dir.c;
-          if (this.isValidPosition(newRow, newCol)) {
-            checkCell(newRow, newCol);
-          }
+        if (this.playerId > 0) {
+          this.setupGameSubscriptions();
+          this.requestGameState();
         }
       }
-    };
 
-    checkCell(row, col);
-    return isSunk;
-  }
-
-  /**
-   * Начать новую игру
-   */
-  restartGame(): void {
-    // Сбросить состояние игры
-    this.gameId = 0;
-    this.isGameStarted = false;
-    this.gameState = {
-      myField: this.createEmptyField(),
-      opponentField: this.createEmptyField(),
-      myHits: this.createEmptyHitsField(),
-      opponentHits: this.createEmptyHitsField(),
-      myShips: 10,
-      opponentShips: 10,
-      isMyTurn: false,
-      gameStatus: 'waiting'
-    };
-    this.myShotsCount = 0;
-    this.myHitsCount = 0;
-    this.computerShotsCount = 0;
-    this.computerHitsCount = 0;
-
-    // Уведомить родительский компонент
-    this.gameAction.emit({ type: 'RESTART' });
-  }
-  ngOnInit() {
-    // Инициализация пустых полей при старте компонента
-    if (!this.gameState.myField.length) {
-      this.gameState.myField = this.createEmptyField();
-    }
-    if (!this.gameState.opponentField.length) {
-      this.gameState.opponentField = this.createEmptyField();
-    }
-    if (!this.gameState.myHits.length) {
-      this.gameState.myHits = this.createEmptyHitsField();
-    }
-    if (!this.gameState.opponentHits.length) {
-      this.gameState.opponentHits = this.createEmptyHitsField();
-    }
-
-    // Подписка на WebSocket обновления
-    this.subscribeToWebSocket();
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['gameState'] && !changes['gameState'].firstChange) {
-      this.updateStats();
-    }
-
-    if (changes['gameId'] && this.gameId) {
-      this.loadGameState();
-    }
-  }
-
-  ngOnDestroy() {
-    // Отписка от всех подписок
-    this.subscriptions.forEach(sub => sub.unsubscribe());
-    this.computerGameService.disconnect();
-  }
-
-  private subscribeToWebSocket() {
-    const sub = this.computerGameService.getGameStateUpdates().subscribe(
-      (state) => {
-        if (state) {
-          this.updateGameState(state);
+      // Проверяем currentPlayerId в queryParams
+      if (queryParams['currentPlayerId'] && !this.playerId) {
+        this.playerId = parseInt(queryParams['currentPlayerId'], 10);
+        console.log('Player ID взят из queryParams currentPlayerId:', this.playerId);
+        if (this.gameIdNum > 0 && this.playerId > 0) {
+          this.setupGameSubscriptions();
+          this.requestGameState();
         }
-      },
-      (error) => {
-        console.error('WebSocket error:', error);
-        this.errorMessage = 'Ошибка соединения с сервером';
+      }
+    });
+
+    // 4. Если currentPlayerId передан через @Input
+    if (this.currentPlayerId && this.currentPlayerId > 0 && !this.playerId) {
+      this.playerId = this.currentPlayerId;
+      console.log('Player ID установлен из @Input:', this.playerId);
+      if (this.gameIdNum > 0) {
+        this.setupGameSubscriptions();
+        this.requestGameState();
+      }
+    }
+  }
+
+  private handleRouteParams(params: any) {
+    this.gameId = params['gameId'];
+    this.gameIdNum = parseInt(this.gameId, 10);
+    console.log('Получен ID игры из параметров маршрута:', this.gameId);
+
+    this.playerId = this.getPlayerId();
+    console.log('Player ID определен:', this.playerId);
+
+    if (this.playerId > 0) {
+      this.setupGameSubscriptions();
+      this.requestGameState();
+    } else {
+      console.error('Player ID не найден, невозможно установить подписки');
+    }
+  }
+
+  private getPlayerId(): number {
+    console.log('🔍 Поиск playerId из всех доступных источников:');
+
+    // 1. Проверяем queryParams текущего маршрута
+    const queryParams = this.route.snapshot.queryParams;
+    if (queryParams['playerId']) {
+      const id = +queryParams['playerId'];
+      console.log('Player ID найден в queryParams:', id);
+      return id;
+    }
+
+    // 2. Проверяем параметры маршрута
+    const routeParams = this.route.snapshot.params;
+    if (routeParams['playerId']) {
+      const id = +routeParams['playerId'];
+      console.log('Player ID найден в параметрах маршрута:', id);
+      return id;
+    }
+
+    // 3. Проверяем sessionStorage
+    const sessionId = sessionStorage.getItem('currentPlayerId');
+    if (sessionId && !isNaN(parseInt(sessionId))) {
+      const id = parseInt(sessionId);
+      console.log('Player ID найден в sessionStorage:', id);
+      return id;
+    }
+
+    // 4. Проверяем состояние WebSocketService
+    if (this.webSocketService.isConnected() && this.webSocketService.getCurrentPlayerId()) {
+      const id = this.webSocketService.getCurrentPlayerId()!;
+      console.log('Player ID найден в WebSocketService:', id);
+      return id;
+    }
+
+    // 5. Проверяем @Input currentPlayerId
+    if (this.currentPlayerId && this.currentPlayerId > 0) {
+      console.log('Player ID взят из @Input currentPlayerId:', this.currentPlayerId);
+      return this.currentPlayerId;
+    }
+
+    console.error('Player ID не найден ни в одном источнике');
+    return 0;
+  }
+
+  private setupGameSubscriptions() {
+    if (!this.gameIdNum || !this.playerId || this.playerId === 0) {
+      console.warn('Не могу подписаться: gameId или playerId не установлены');
+      return;
+    }
+
+    console.log('Настраиваю все необходимые подписки для gameId:', this.gameIdNum, 'playerId:', this.playerId);
+
+    // 1. Подписка на начало игры - КРИТИЧЕСКИ ВАЖНО
+    this.subscribeToGameStart();
+
+    // 2. Подписка на обновления состояния игры
+    this.subscribeToGameState();
+
+    // 3. Подписка на завершение игры
+    this.subscribeToGameEnd();
+
+    // 4. Подписка на ошибки
+    this.subscribeToErrors();
+
+    // 5. Подписка на предложения ничьи
+    this.subscribeToDrawOffers();
+  }
+
+  private subscribeToGameStart() {
+    console.log('🔧 Подписка на уведомления о начале игры');
+    const subscription = this.webSocketService.subscribeToGameStart((notification: GameStartNotification) => {
+      console.log('🎮 Получено уведомление о начале игры:', notification);
+
+      // Обновляем gameId если он пришел в уведомлении
+      if (notification.gameId && notification.gameId > 0) {
+        this.gameIdNum = notification.gameId;
+        console.log('🎮 Обновлен gameId:', this.gameIdNum);
+      }
+
+      // Обновляем состояние хода
+      if (notification.currentTurnPlayerId != null) { // проверяет и null, и undefined
+        const turnPlayerId = notification.currentTurnPlayerId; // теперь TypeScript знает: это number
+        this.gameState.isMyTurn = turnPlayerId === this.playerId;
+        this.gameState.currentTurnPlayerId = turnPlayerId; // о
+        console.log('🎮 Обновлен статус хода. Мой ход?', this.gameState.isMyTurn);
+      }
+
+      // Запрашиваем состояние игры после получения уведомления
+      if (this.gameIdNum > 0) {
+        console.log('Запрашиваем состояние игры после получения уведомления о начале');
+        this.requestGameState();
+      }
+    });
+
+    if (subscription) {
+      this.stompSubscriptions.push(subscription);
+    }
+  }
+
+  private requestGameState() {
+    if (!this.gameIdNum || !this.playerId) {
+      console.warn('Не могу запросить состояние игры: отсутствуют gameId или playerId');
+      return;
+    }
+
+    console.log('📡 Запрашиваем состояние игры для gameId:', this.gameIdNum, 'playerId:', this.playerId);
+    this.webSocketService.sendGetGameState({
+      gameId: this.gameIdNum,
+      playerId: this.playerId
+    });
+  }
+
+  private subscribeToGameState() {
+    console.log('🔧 Подписка на обновления состояния игры');
+    const subscription = this.webSocketService.subscribeToGameState(
+      this.playerId,
+      (gameState: any) => {
+        console.log('Получено состояние игры:', gameState);
+        this.updateGameState(gameState);
       }
     );
-    this.subscriptions.push(sub);
-  }
 
-  private loadGameState() {
-    if (this.gameId) {
-      this.isLoading = true;
-      this.computerGameService.getGameState(this.gameId).subscribe({
-        next: (response: GameStateResponse) => {
-          this.updateGameStateFromResponse(response);
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Failed to load game state:', error);
-          this.errorMessage = 'Не удалось загрузить состояние игры';
-          this.isLoading = false;
-        }
-      });
+    if (subscription) {
+      this.stompSubscriptions.push(subscription);
     }
   }
 
-  private updateGameStateFromResponse(response: GameStateResponse) {
+  private updateGameState(gameState: any) {
+    console.log('Обновление состояния игры. Полученные данные:', gameState);
+    console.log('Мой playerId:', this.playerId);
+    console.log('Текущий ход игрока (от сервера):', gameState.currentTurnPlayerId);
+
+    // Сохраняем предыдущее состояние хода для логирования
+    const previousTurn = this.gameState.isMyTurn;
+
+    // Обновляем состояние игры
     this.gameState = {
-      myField: this.convertBoardFormat(response.playerBoard, true),
-      opponentField: this.convertBoardFormat(response.computerBoard, false),
-      myHits: this.extractHits(response.playerBoard),
-      opponentHits: this.extractHits(response.computerBoard),
-      myShips: this.countRemainingShips(response.playerBoard),
-      opponentShips: this.countRemainingShips(response.computerBoard),
-      isMyTurn: response.playerTurn,
-      gameStatus: response.status,
-      lastMoveTime: response.lastMoveTime
+      ...this.gameState,
+      ...gameState,
+      // Важно: явно определяем чей сейчас ход на основе данных от сервера
+      isMyTurn: gameState.currentTurnPlayerId === this.playerId,
+      currentTurnPlayerId: gameState.currentTurnPlayerId
     };
 
     this.updateStats();
-  }
 
-  private convertBoardFormat(board: string[][], showShips: boolean): string[][] {
-    // Конвертация формата сервера в формат клиента
-    const converted: string[][] = [];
-
-    for (let i = 0; i < 10; i++) {
-      converted[i] = [];
-      for (let j = 0; j < 10; j++) {
-        const cell = board[i]?.[j] || 'EMPTY';
-
-        if (!showShips && cell === 'SHIP') {
-          converted[i][j] = 'EMPTY';
-        } else {
-          converted[i][j] = cell;
-        }
-      }
-    }
-
-    return converted;
-  }
-
-  private extractHits(board: string[][]): boolean[][] {
-    const hits: boolean[][] = [];
-
-    for (let i = 0; i < 10; i++) {
-      hits[i] = [];
-      for (let j = 0; j < 10; j++) {
-        const cell = board[i]?.[j] || 'EMPTY';
-        hits[i][j] = cell === 'HIT';
-      }
-    }
-
-    return hits;
-  }
-
-  private countRemainingShips(board: string[][]): number {
-    // Упрощенный подсчет - в реальном приложении нужна более сложная логика
-    let shipCells = 0;
-
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (board[i][j] === 'SHIP') {
-          shipCells++;
-        }
-      }
-    }
-
-    return Math.max(0, 10 - Math.floor(shipCells / 2)); // Примерная логика
+    console.log('Состояние обновлено:');
+    console.log('   - Мой ход?', this.gameState.isMyTurn);
+    console.log('   - Был мой ход?', previousTurn);
+    console.log('   - Текущий ход (сервер):', gameState.currentTurnPlayerId);
+    console.log('   - Мой ID:', this.playerId);
+    console.log('   - Корабли противника осталось:', this.gameState.opponentShipsLeft);
+    console.log('   - Мои корабли осталось:', this.gameState.myShipsLeft);
   }
 
   get isYourTurn(): boolean {
@@ -305,162 +303,265 @@ export class TwoPlayersFieldComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   get myShipsCount(): number {
-    return this.gameState?.myShips ?? 10;
+    return this.gameState?.myShipsLeft ?? 0;
   }
 
   get opponentShipsCount(): number {
-    return this.gameState?.opponentShips ?? 10;
+    return this.gameState?.opponentShipsLeft ?? 0;
   }
 
   get myField(): string[][] {
-    return this.gameState?.myField || this.createEmptyField();
+    return this.gameState?.myField || this.createEmptyStringField();
   }
 
   get opponentField(): string[][] {
-    return this.gameState?.opponentField || this.createEmptyField();
+    return this.gameState?.opponentField || this.createEmptyStringField();
   }
 
-  get myHits(): boolean[][] {
-    return this.gameState?.myHits || this.createEmptyHitsField();
+  get myHits(): string[][] {
+    return this.gameState?.myHits || this.createEmptyStringField();
+  }
+  private createEmptyStringField(): string[][] {
+    return Array(10).fill(null).map(() => Array(10).fill(' '));
   }
 
-  get opponentHits(): boolean[][] {
-    return this.gameState?.opponentHits || this.createEmptyHitsField();
+
+  get opponentHits(): string[][] {
+    return this.gameState?.opponentHits && this.gameState.opponentHits.length ?
+      this.gameState.opponentHits : this.createEmptyHitsField();
   }
 
+  /**
+   * Обработка клика по клетке поля противника
+   */
   onOpponentCellClick(row: number, col: number): void {
-    if (!this.isYourTurn || !this.isGameStarted) {
+    if (!this.isYourTurn || this.opponentField[row]?.[col] !== ' ') {
+      return;
+    }
+    this.sendMove(row, col);
+  }
+
+  private canMakeMove(row: number, col: number): boolean {
+    return this.isYourTurn &&
+      this.opponentHits[row] &&
+      !this.isCellAlreadyHit(row, col);
+  }
+
+  private isCellAlreadyHit(row: number, col: number): boolean {
+    // Проверяем opponentField, а не opponentHits
+    if (!this.opponentField[row] || !this.opponentField[row][col]) {
+      return false;
+    }
+    return this.opponentField[row][col] === 'H' || this.opponentField[row][col] === 'M';
+  }
+
+  private sendMove(row: number, col: number) {
+    if (!this.gameIdNum || !this.playerId) return;
+
+    const move = {
+      gameId: this.gameIdNum,
+      playerId: this.playerId,
+      row: row,
+      column: col
+    };
+
+    this.webSocketService.sendGameMove(move);
+  }
+
+  private sendGameActionWithData(actionType: string, data: any = {}) {
+    if (!this.gameIdNum || !this.playerId) return;
+
+    const action = {
+      gameId: this.gameIdNum,
+      playerId: this.playerId,
+      actionType: actionType,
+      ...data
+    };
+
+    this.webSocketService.sendGameAction(action);
+  }
+
+  /**
+   * Проверка, является ли корабль потопленным
+   */
+  isShipSunk(row: number, col: number, isMyField: boolean): boolean {
+    const field = isMyField ? this.myField : this.opponentField;
+    const hits = isMyField ? this.myHits : this.opponentField;
+
+    if (!field[row] || field[row][col] !== 'S') {
+      return false;
+    }
+    return this.checkShipSunk(row, col, field, hits);
+  }
+
+  /**
+   * Рекурсивная проверка потопления корабля
+   */
+  private checkShipSunk(row: number, col: number, field: string[][], hits: string[][]): boolean {
+    const directions = [
+      { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }
+    ];
+    let isSunk = true;
+    const visited = new Set<string>();
+
+    const dfs = (r: number, c: number) => {
+      const key = `${r},${c}`;
+      if (visited.has(key) || r < 0 || r >= 10 || c < 0 || c >= 10) return;
+      visited.add(key);
+
+      if (field[r][c] === 'S') {
+        if (hits[r][c] !== 'H') {
+          isSunk = false;
+          return;
+        }
+        for (const dir of directions) {
+          dfs(r + dir.r, c + dir.c);
+        }
+      }
+    };
+
+    dfs(row, col);
+    return isSunk;
+  }
+
+  /**
+   * Проверка валидности позиции
+   */
+  private isValidPosition(row: number, col: number): boolean {
+    return row >= 0 && row < 10 && col >= 0 && col < 10;
+  }
+
+  /**
+   * Обновление статистики
+   */
+  private updateStats(): void {
+    if (!this.opponentField?.length) {
+      this.myShotsCount = 0;
+      this.myHitsCount = 0;
       return;
     }
 
-    if (this.opponentHits[row][col]) {
-      return; // Уже стреляли в эту клетку
+    let shots = 0;
+    let hits = 0;
+
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        const cell = this.opponentField[i]?.[j];
+        if (cell === 'H' || cell === 'M') {
+          shots++;
+          if (cell === 'H') hits++;
+        }
+      }
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.myShotsCount = shots;
+    this.myHitsCount = hits;
+  }
 
-    // Отправляем выстрел через REST
-    this.computerGameService.makeShot(this.gameId, row, col).subscribe({
-      next: (response) => {
-        this.handleShotResponse(response);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Shot error:', error);
-        this.errorMessage = error.error?.message || 'Ошибка при выполнении выстрела';
-        this.isLoading = false;
+  /**
+   * Создание пустого поля
+   */
+  private createEmptyField(): number[][] {
+    return Array(10).fill(0).map(() => Array(10).fill(0));
+  }
+
+  /**
+   * Создание пустого поля попаданий
+   */
+  private createEmptyHitsField(): string[][] {
+    return Array(10).fill(0).map(() => Array(10).fill(' '));
+  }
+
+  private subscribeToGameEnd() {
+    console.log('Подписка на уведомления о завершении игры');
+    const subscription = this.webSocketService.subscribeToGameEnd(
+      this.playerId,
+      (endNotification: any) => {
+        console.log('Игра завершена:', endNotification);
+        this.handleGameEnd(endNotification);
+      }
+    );
+
+    if (subscription) {
+      this.stompSubscriptions.push(subscription);
+    }
+  }
+
+  private subscribeToErrors() {
+    console.log('🔧 Подписка на уведомления об ошибках');
+    const subscription = this.webSocketService.subscribeToErrors(
+      this.playerId,
+      (error: any) => {
+        console.error('Ошибка игры:', error);
+        this.showError(error.message || 'Произошла ошибка');
+      }
+    );
+
+    if (subscription) {
+      this.stompSubscriptions.push(subscription);
+    }
+  }
+
+  private subscribeToDrawOffers() {
+    console.log('🔧 Подписка на предложения ничьи');
+    const subscription = this.webSocketService.subscribeToDrawOffers(
+      this.playerId,
+      (drawOffer: any) => {
+        console.log('Получено предложение ничьи:', drawOffer);
+        this.handleDrawOffer(drawOffer);
+      }
+    );
+
+    if (subscription) {
+      this.stompSubscriptions.push(subscription);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['gameState']) {
+      this.updateStats();
+    }
+    if (changes['currentPlayerId'] && changes['currentPlayerId'].currentValue) {
+      this.playerId = changes['currentPlayerId'].currentValue;
+      console.log('🔄 Player ID обновлен через @Input:', this.playerId);
+      // Переподписываемся при изменении playerId
+      this.setupGameSubscriptions();
+    }
+  }
+
+  ngOnDestroy() {
+    // Отписываемся от RxJS подписок
+    this.rxSubscriptions.forEach(sub => sub.unsubscribe());
+    this.rxSubscriptions = [];
+
+    // Отписываемся от Stomp подписок
+    this.unsubscribeFromStompSubscriptions();
+  }
+
+  private unsubscribeFromStompSubscriptions() {
+    this.stompSubscriptions.forEach(sub => {
+      try {
+        if (sub && typeof sub.unsubscribe === 'function') {
+          sub.unsubscribe();
+        }
+      } catch (error) {
+        console.warn('Ошибка при отписке от Stomp подписки:', error);
       }
     });
-
-    // Или через WebSocket
-    // this.computerGameService.sendShotViaWebSocket(this.gameId, row, col);
+    this.stompSubscriptions = [];
   }
 
-  private handleShotResponse(response: any) {
-    // Обновляем поле противника на основе результата выстрела
-    if (response.hit) {
-      this.gameState.opponentField[response.row][response.col] = 'HIT';
-      this.gameState.opponentHits[response.row][response.col] = true;
-    } else {
-      this.gameState.opponentField[response.row][response.col] = 'MISS';
-      this.gameState.opponentHits[response.row][response.col] = true;
-    }
-
-    // Обновляем статистику
-    this.myShotsCount = response.playerShots || this.myShotsCount + 1;
-    this.myHitsCount = response.playerHits || (response.hit ? this.myHitsCount + 1 : this.myHitsCount);
-
-    // Обрабатываем ход компьютера
-    if (response.computerRow !== undefined && response.computerCol !== undefined) {
-      if (response.computerHit) {
-        this.gameState.myField[response.computerRow][response.computerCol] = 'HIT';
-        this.gameState.myHits[response.computerRow][response.computerCol] = true;
-      } else {
-        this.gameState.myField[response.computerRow][response.computerCol] = 'MISS';
-        this.gameState.myHits[response.computerRow][response.computerCol] = true;
-      }
-
-      this.computerShotsCount = response.computerShots || this.computerShotsCount + 1;
-      this.computerHitsCount = response.computerHits || (response.computerHit ? this.computerHitsCount + 1 : this.computerHitsCount);
-    }
-
-    // Обновляем количество кораблей
-    this.gameState.myShips = response.playerShipsRemaining || this.gameState.myShips;
-    this.gameState.opponentShips = response.computerShipsRemaining || this.gameState.opponentShips;
-
-    // Обновляем очередь хода
-    this.gameState.isMyTurn = !response.gameOver;
-
-    // Проверяем окончание игры
-    if (response.gameOver) {
-      this.gameState.gameStatus = 'completed';
-      this.showGameOverMessage(response.message);
-    }
-
-    this.updateStats();
-  }
-
-  private showGameOverMessage(message: string) {
-    alert(message);
-    // Или показать модальное окно с результатом
-  }
-
-  private updateGameState(state: any) {
-    // Обновление состояния из WebSocket
-    this.gameState = { ...this.gameState, ...state };
-    this.updateStats();
-  }
-
-  private updateStats(): void {
-    // Считаем выстрелы игрока
-    this.myShotsCount = 0;
-    this.myHitsCount = 0;
-
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.opponentHits[i][j]) {
-          this.myShotsCount++;
-          if (this.opponentField[i][j] === 'HIT') {
-            this.myHitsCount++;
-          }
-        }
-      }
-    }
-
-    // Считаем выстрелы компьютера
-    this.computerShotsCount = 0;
-    this.computerHitsCount = 0;
-
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.myHits[i][j]) {
-          this.computerShotsCount++;
-          if (this.myField[i][j] === 'HIT') {
-            this.computerHitsCount++;
-          }
-        }
-      }
-    }
-  }
-
-  private createEmptyField(): string[][] {
-    return Array(10).fill(null).map(() => Array(10).fill('EMPTY'));
-  }
-
-  private createEmptyHitsField(): boolean[][] {
-    return Array(10).fill(null).map(() => Array(10).fill(false));
-  }
-
-  // Управление игрой
+  // ==================== УПРАВЛЕНИЕ ИГРОЙ ====================
   offerDraw(): void {
+    console.log('Предложение ничьи');
     this.showDrawPopup = true;
-    this.gameAction.emit({ type: 'OFFER_DRAW' });
+    this.sendGameActionWithData('OFFER_DRAW');
   }
 
   cancelDrawOffer(): void {
+    console.log('Отмена предложения ничьи');
     this.showDrawPopup = false;
-    this.gameAction.emit({ type: 'CANCEL_DRAW' });
+    this.sendGameActionWithData('CANCEL_DRAW');
   }
 
   closeDrawPopup(): void {
@@ -468,107 +569,70 @@ export class TwoPlayersFieldComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   acceptDraw(): void {
+    console.log('Принятие предложения ничьи');
     this.showDrawResponsePopup = false;
-    this.gameAction.emit({ type: 'ACCEPT_DRAW' });
+    this.sendGameActionWithData('ACCEPT_DRAW');
   }
 
   declineDraw(): void {
+    console.log('Отклонение предложения ничьи');
     this.showDrawResponsePopup = false;
-    this.gameAction.emit({ type: 'DECLINE_DRAW' });
+    this.sendGameActionWithData('DECLINE_DRAW');
   }
 
   surrender(): void {
+    console.log('🏳️ Предложение сдаться');
     this.showSurrenderPopup = true;
   }
 
   confirmSurrender(): void {
-    this.computerGameService.surrender(this.gameId).subscribe({
-      next: () => {
-        this.gameState.gameStatus = 'completed';
-        this.showSurrenderPopup = false;
-        this.gameAction.emit({ type: 'SURRENDER' });
-      },
-      error: (error) => {
-        console.error('Surrender error:', error);
-        this.errorMessage = 'Ошибка при сдаче';
-      }
-    });
+    console.log('Подтверждение сдачи');
+    this.showSurrenderPopup = false;
+    this.sendGameActionWithData('SURRENDER');
   }
 
   cancelSurrender(): void {
+    console.log('Отмена сдачи');
     this.showSurrenderPopup = false;
   }
 
-  /**
-   * Начать игру после размещения кораблей
-   */
-  startGame(): void {
-    if (this.playerId && this.placementStrategy && this.playerShips.length > 0) {
-      this.isLoading = true;
-      this.errorMessage = '';
+  private handleGameEnd(endNotification: any) {
+    console.log('🏁 Игра завершена с результатом:', endNotification.result);
+    this.showGameResult(endNotification);
+  }
 
-      const request: ComputerGameStartRequest = {
-        placementStrategy: this.placementStrategy,
-        playerShips: this.playerShips
-      };
+  private handleDrawOffer(drawOffer: any) {
+    this.showDrawResponsePopup = true;
+    // Сохраняем данные о предложении
+    const drawOfferData = {
+      fromPlayerId: drawOffer.fromPlayerId,
+      gameId: drawOffer.gameId,
+      timestamp: new Date()
+    };
+    console.log('Предложение ничьи получено:', drawOfferData);
+  }
 
-      console.log('Starting game with:', {
-        playerId: this.playerId,
-        request: request
-      });
+  private showError(message: string) {
+    console.error('Ошибка игры:', message);
+    alert('Ошибка игры: ' + message);
+  }
 
-      // Шаг 1: Создаем игру (с пустыми досками)
-      this.computerGameService.createGame(this.playerId, request).subscribe({
-        next: (response: any) => {
-          console.log('Game created response:', response);
+  private showGameResult(endNotification: any) {
+    console.log('Показать результат игры:', endNotification);
 
-          // Получаем gameId из ответа сервера
-          // На сервере возвращается объект Game с полем gameId
-          this.gameId = response.gameId || response.id || response;
+    // 1. Проверяем на ничью
+    if (endNotification.draw) {
+      this.router.navigate(['/lobby']);
+      return;
+    }
 
-          if (!this.gameId) {
-            throw new Error('Не удалось получить ID игры');
-          }
-
-          console.log('Game ID:', this.gameId);
-
-          // Шаг 2: Настраиваем игру (расставляем корабли)
-          this.computerGameService.setupGame(this.gameId, request).subscribe({
-            next: (setupResponse: any) => {
-              console.log('Game setup completed:', setupResponse);
-
-              // Шаг 3: Загружаем начальное состояние игры
-              this.loadGameState();
-
-              this.isGameStarted = true;
-              this.gameState.gameStatus = 'ACTIVE';
-              this.gameState.isMyTurn = true; // Игрок ходит первым
-              this.isLoading = false;
-
-              // Подписываемся на WebSocket обновления
-              this.computerGameService.subscribeToGame(this.gameId);
-
-              // Уведомляем родительский компонент
-              this.onGameStarted.emit({
-                gameId: this.gameId,
-                gameState: this.gameState
-              });
-            },
-            error: (error) => {
-              console.error('Setup game error:', error);
-              this.errorMessage = error.error?.message || 'Ошибка при настройке игры';
-              this.isLoading = false;
-            }
-          });
-        },
-        error: (error) => {
-          console.error('Create game error:', error);
-          this.errorMessage = error.error?.message || 'Ошибка при создании игры';
-          this.isLoading = false;
-        }
-      });
+    // 2. Проверяем победителя
+    if (endNotification.winnerId === this.playerId) {
+      // Вы победили
+      this.router.navigate(['/win']);
     } else {
-      this.errorMessage = 'Не все данные для начала игры заполнены';
+      // Вы проиграли (победил другой ID)
+      this.router.navigate(['/lose']);
     }
   }
 }

@@ -3,6 +3,8 @@ import { DatePipe, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ComputerGameService } from '../../services/computer-game.service'; // Добавьте этот импорт
+import { ComputerGameStartRequest, ComputerGame } from '../../services/computer-game.interface'; // Добавьте этот импорт
 
 /**
  * Интерфейс для представления корабля на игровом поле
@@ -40,10 +42,10 @@ interface ShipPlacement {
  * Конфигурация типов кораблей и их количества
  */
 const SHIP_TYPES = [
-  { type: 'battleship', size: 4, count: 1 },   // 1 линкор (4 клетки)
-  { type: 'cruiser', size: 3, count: 2 },      // 2 крейсера (3 клетки)
-  { type: 'destroyer', size: 2, count: 3 },    // 3 эсминца (2 клетки)
-  { type: 'boat', size: 1, count: 4 }          // 4 катера (1 клетка)
+  { type: 'battleship', size: 4, count: 1 },
+  { type: 'cruiser', size: 3, count: 2 },
+  { type: 'destroyer', size: 2, count: 3 },
+  { type: 'boat', size: 1, count: 4 }
 ];
 
 /**
@@ -60,19 +62,6 @@ enum DifficultyLevel {
   HARD = 'HARD'
 }
 
-/**
- * Компонент для расстановки кораблей перед началом одиночной игры в морской бой
- *
- * Основные функции:
- * - Drag & Drop расстановка кораблей
- * - Сохранение/загрузка пользовательских расстановок
- * - Автоматическая расстановка по различным стратегиям
- * - Выбор уровня сложности ИИ
- * - Валидация правильности расстановки
- *
- * @component
- * @selector app-ai-placement-page
- */
 @Component({
   selector: 'app-ai-placement-page',
   standalone: true,
@@ -81,41 +70,24 @@ enum DifficultyLevel {
   styleUrl: './ai-placement-page.component.scss'
 })
 export class AiPlacementPageComponent {
-  /** Буквенные обозначения строк игрового поля */
   rows = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К'];
-
-  /** Числовые обозначения столбцов игрового поля */
   columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-  /** Текущая ориентация корабля (горизонтальная/вертикальная) */
   isHorizontal = true;
-
-  /** Перетаскиваемый корабль */
   draggedShip: any = null;
-
-  /** Ячейка над которой находится курсор при перетаскивании */
   hoveredCell: { row: string, col: number } | null = null;
-
-  /** Потенциальные позиции для размещения корабля */
   potentialPositions: { row: string, col: number }[] = [];
 
-  /** Флаги отображения всплывающих окон */
   showLoadPopup = false;
   showSavePopup = false;
   showClearConfirmation = false;
   showDifficultyPopup = false;
   showMessagePopup = false;
 
-  /** Данные для попапа сообщения */
   messageTitle = '';
   messageText = '';
-
-  /** Название новой сохраняемой расстановки */
   newPlacementName: string = '';
-
-  /** Список сохраненных пользовательских расстановок */
   userPlacements: UserPlacement[] = [];
-  /** Список доступных стратегий расстановки */
+
   strategies = [
     {
       id: 'coastal',
@@ -138,17 +110,15 @@ export class AiPlacementPageComponent {
       description: 'Корабли размещаются равномерно по всему полю'
     }
   ];
-  /** Выбранный уровень сложности */
+
   selectedDifficulty: DifficultyLevel = DifficultyLevel.MEDIUM;
 
-  /** Доступные уровни сложности */
   difficultyLevels = [
     { value: DifficultyLevel.EASY, label: 'Легкий', description: 'ИИ стреляет случайно' },
     { value: DifficultyLevel.MEDIUM, label: 'Средний', description: 'ИИ использует базовую логику' },
     { value: DifficultyLevel.HARD, label: 'Сложный', description: 'ИИ использует продвинутые алгоритмы' }
   ];
 
-  /** Список кораблей для расстановки */
   ships: Ship[] = [
     { id: 1, type: 'battleship', size: 4, positions: [], placed: false },
     { id: 2, type: 'cruiser', size: 3, positions: [], placed: false },
@@ -162,15 +132,9 @@ export class AiPlacementPageComponent {
     { id: 10, type: 'boat', size: 1, positions: [], placed: false }
   ];
 
-  /** Флаг готовности игрока */
   isPlayerReady = false;
-
-  /** Текущий авторизованный пользователь */
   currentPlayer: any = null;
 
-  /**
-   * Геттер для получения ID текущего пользователя
-   */
   private get userId(): string {
     if (this.currentPlayer && this.currentPlayer.player_id) {
       return this.currentPlayer.player_id;
@@ -180,19 +144,14 @@ export class AiPlacementPageComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private computerGameService: ComputerGameService // Добавьте этот сервис
   ) {}
 
-  /**
-   * Инициализация компонента
-   */
   ngOnInit() {
     this.loadCurrentPlayer();
   }
 
-  /**
-   * Загрузка данных текущего пользователя
-   */
   loadCurrentPlayer() {
     this.currentPlayer = this.authService.getCurrentUser();
     console.log('Текущий пользователь:', this.currentPlayer);
@@ -211,9 +170,6 @@ export class AiPlacementPageComponent {
 
   // ==================== МЕТОДЫ УПРАВЛЕНИЯ ИГРОВЫМ ПОЛЕМ ====================
 
-  /**
-   * Запрос на очистку игрового поля
-   */
   requestClearBoard() {
     if (!this.hasAtLeastOneShip()) {
       this.showMessage('Ошибка', 'На поле нет кораблей для очистки', true);
@@ -222,34 +178,22 @@ export class AiPlacementPageComponent {
     this.showClearConfirmation = true;
   }
 
-  /**
-   * Подтверждение очистки поля
-   */
   confirmClear() {
     this.clearBoard();
     this.showClearConfirmation = false;
     this.showMessage('Поле очищено', 'Все корабли были удалены с поля', true);
   }
 
-  /**
-   * Отмена очистки поля
-   */
   cancelClear() {
     this.showClearConfirmation = false;
   }
 
-  /**
-   * Переключение ориентации корабля
-   */
   toggleOrientation() {
     this.isHorizontal = !this.isHorizontal;
     const orientation = this.isHorizontal ? 'горизонтально' : 'вертикально';
     this.showMessage('Ориентация изменена', `Корабли теперь размещаются ${orientation}`, true);
   }
 
-  /**
-   * Очистка игрового поля
-   */
   clearBoard() {
     this.ships.forEach(ship => {
       ship.positions = [];
@@ -258,9 +202,6 @@ export class AiPlacementPageComponent {
     this.isPlayerReady = false;
   }
 
-  /**
-   * Генерация случайной расстановки
-   */
   generateRandom() {
     this.clearBoard();
 
@@ -275,9 +216,6 @@ export class AiPlacementPageComponent {
     this.showMessage('Случайная расстановка', 'Все корабли были размещены случайным образом', true);
   }
 
-  /**
-   * Получение читаемого названия типа корабля
-   */
   getShipTypeName(type: string): string {
     const typeNames: { [key: string]: string } = {
       'battleship': 'Линкор',
@@ -288,38 +226,23 @@ export class AiPlacementPageComponent {
     return typeNames[type] || type;
   }
 
-  /**
-   * Получение общего количества оставшихся кораблей
-   */
   getTotalRemainingShipsCount(): number {
     return this.ships.filter(ship => !ship.placed).length;
   }
 
-  /**
-   * Получение названия уровня сложности
-   */
   getDifficultyLabel(level: DifficultyLevel): string {
     const levelObj = this.difficultyLevels.find(d => d.value === level);
     return levelObj ? levelObj.label : 'Средний';
   }
 
-  /**
-   * Показать попап выбора сложности
-   */
   showDifficultySelection() {
     this.showDifficultyPopup = true;
   }
 
-  /**
-   * Закрыть попап выбора сложности
-   */
   closeDifficultyPopup() {
     this.showDifficultyPopup = false;
   }
 
-  /**
-   * Изменить уровень сложности
-   */
   changeDifficulty(level: DifficultyLevel) {
     this.selectedDifficulty = level;
     this.showDifficultyPopup = false;
@@ -336,31 +259,21 @@ export class AiPlacementPageComponent {
       return;
     }
 
-    // Сохраняем ID игрока для следующей страницы
-    const playerId = this.currentPlayer.player_id;
-    if (playerId) {
-      localStorage.setItem('playerId', playerId.toString());
+    if (!this.currentPlayer?.player_id) {
+      this.showMessage('Ошибка', 'Пользователь не авторизован', false);
+      return;
     }
 
-    // Сохраняем уровень сложности
+    const playerShips = this.convertToServerFormat();
+
+    if (playerShips.length !== 10) {
+      this.showMessage('Ошибка', 'Должно быть размещено 10 кораблей!', false);
+      return;
+    }
+
+    // Сохраняем расстановку локально
+    localStorage.setItem('playerShips', JSON.stringify(playerShips));
     localStorage.setItem('aiDifficulty', this.selectedDifficulty);
-
-    // Конвертируем расстановку для передачи
-    const playerPlacement = this.convertToServerFormat();
-
-    // Генерируем расстановку для ИИ
-    const aiPlacement = this.generateAIPlacement();
-
-    // Сохраняем данные для игры
-    const gameData = {
-      playerId: playerId,
-      playerShips: playerPlacement,
-      aiShips: aiPlacement,
-      difficulty: this.selectedDifficulty,
-      gameType: 'SINGLE_PLAYER'
-    };
-
-    localStorage.setItem('aiGameData', JSON.stringify(gameData));
 
     this.isPlayerReady = true;
     this.showMessage('Готов к игре!', `Уровень сложности: ${this.selectedDifficulty}. Нажмите "Начать игру", чтобы начать сражение с ИИ.`, false);
@@ -369,17 +282,45 @@ export class AiPlacementPageComponent {
   /**
    * Начать игру с ИИ
    */
+  /**
+   * Начать игру с ИИ
+   */
   startGameWithAI() {
-    if (!this.isPlayerReady) {
-      this.showMessage('Не готовы к игре', 'Сначала нажмите "Готов к игре"', false);
-
+    if (!this.isAllShipsPlaced()) {
+      this.showMessage('Не все корабли размещены', 'Разместите все корабли перед началом игры!', false);
       return;
     }
 
-    // Переход на страницу игры с ИИ
-    this.router.navigate(['/single-game'], {
-      queryParams: {
-        difficulty: this.selectedDifficulty
+    console.log('Создание игры с уровнем сложности:', this.selectedDifficulty);
+
+    // Преобразуем корабли игрока в формат для сервера
+    const playerShips = this.convertToServerFormat();
+
+    const request: ComputerGameStartRequest = {
+      placementStrategy: this.selectedDifficulty,
+      playerShips: playerShips
+    };
+
+    this.computerGameService.createComputerGame(Number(this.userId), request).subscribe({
+      next: (game) => {
+        console.log('Игра создана:', game);
+
+        const gameConfig = {
+          gameId: game.gameId,
+          playerId: this.userId,
+          difficulty: this.selectedDifficulty,
+          ships: playerShips
+        };
+
+        localStorage.setItem('currentGameConfig', JSON.stringify(gameConfig));
+
+        this.router.navigate(['/placement-user'], {
+          state: { gameConfig }
+        });
+      },
+      error: (error) => {
+        console.error('Ошибка при создании игры:', error);
+        this.showMessage('Ошибка', 'Не удалось создать игру с ИИ. Попробуйте еще раз.', false);
       }
     });
   }
@@ -392,275 +333,17 @@ export class AiPlacementPageComponent {
     this.showMessage('Готовность отменена', 'Вы можете изменить расстановку кораблей или уровень сложности', true);
   }
 
-  // ==================== МЕТОДЫ ГЕНЕРАЦИИ ПОЛЯ ИИ ====================
+  // Удалите все методы генерации ИИ на фронтенде, так как теперь это делает бэкенд:
+  // private generateAIPlacement(): ShipPlacement[] { ... }
+  // private generateAIStrategy(ships: Ship[], strategy: string): void { ... }
+  // private getAIShipPosition(size: number, strategy: string): { ... } { ... }
+  // private canPlaceAIShip(allShips: Ship[], ship: Ship, row: string, col: number, orientation: boolean): boolean { ... }
+  // private hasAdjacentAIShip(allShips: Ship[], row: string, col: number): boolean { ... }
+  // private placeAIShip(allShips: Ship[], ship: Ship, row: string, col: number, orientation: boolean): void { ... }
+  // private placeAIRandomly(allShips: Ship[], ship: Ship): void { ... }
+  // private convertShipsToPlacement(ships: Ship[]): ShipPlacement[] { ... }
 
-  /**
-   * Генерация расстановки для ИИ в зависимости от уровня сложности
-   */
-  private generateAIPlacement(): ShipPlacement[] {
-    const aiShips: Ship[] = [
-      { id: 101, type: 'battleship', size: 4, positions: [], placed: false },
-      { id: 102, type: 'cruiser', size: 3, positions: [], placed: false },
-      { id: 103, type: 'cruiser', size: 3, positions: [], placed: false },
-      { id: 104, type: 'destroyer', size: 2, positions: [], placed: false },
-      { id: 105, type: 'destroyer', size: 2, positions: [], placed: false },
-      { id: 106, type: 'destroyer', size: 2, positions: [], placed: false },
-      { id: 107, type: 'boat', size: 1, positions: [], placed: false },
-      { id: 108, type: 'boat', size: 1, positions: [], placed: false },
-      { id: 109, type: 'boat', size: 1, positions: [], placed: false },
-      { id: 110, type: 'boat', size: 1, positions: [], placed: false }
-    ];
-
-    // Выбор стратегии в зависимости от уровня сложности
-    let strategy: string;
-    switch (this.selectedDifficulty) {
-      case DifficultyLevel.EASY:
-        strategy = 'random'; // Простая случайная расстановка
-        break;
-      case DifficultyLevel.MEDIUM:
-        strategy = 'coastal'; // Расстановка у берегов
-        break;
-      case DifficultyLevel.HARD:
-        strategy = 'spread'; // Разбросанная стратегия
-        break;
-      default:
-        strategy = 'coastal';
-    }
-
-    // Генерация расстановки
-    this.generateAIStrategy(aiShips, strategy);
-
-    // Конвертация в формат сервера
-    return this.convertShipsToPlacement(aiShips);
-  }
-
-  /**
-   * Генерация расстановки по выбранной стратегии
-   */
-  private generateAIStrategy(ships: Ship[], strategy: string): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      const shipsOfType = ships.filter(s => s.type === shipType.type && !s.placed);
-
-      for (const ship of shipsOfType) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 100) {
-          const position = this.getAIShipPosition(ship.size, strategy);
-
-          if (this.canPlaceAIShip(ships, ship, position.row, position.col, position.orientation)) {
-            this.placeAIShip(ships, ship, position.row, position.col, position.orientation);
-            placed = true;
-          }
-
-          attempts++;
-        }
-
-        // Если не удалось разместить - размещаем случайно
-        if (!placed) {
-          this.placeAIRandomly(ships, ship);
-        }
-      }
-    }
-  }
-
-  /**
-   * Получение позиции для корабля ИИ в зависимости от стратегии
-   */
-  private getAIShipPosition(size: number, strategy: string): {
-    row: string,
-    col: number,
-    orientation: boolean
-  } {
-    const randomRow = this.rows[Math.floor(Math.random() * this.rows.length)];
-    const randomCol = this.columns[Math.floor(Math.random() * this.columns.length)];
-    const randomOrientation = Math.random() > 0.5;
-
-    switch (strategy) {
-      case 'coastal':
-        // Преимущественно у берегов
-        const side = Math.floor(Math.random() * 4);
-        switch(side) {
-          case 0: // Верхний край
-            return {
-              row: this.rows[Math.floor(Math.random() * 2)],
-              col: Math.floor(Math.random() * BOARD_SIZE) + 1,
-              orientation: randomOrientation
-            };
-          case 1: // Правый край
-            return {
-              row: this.rows[Math.floor(Math.random() * BOARD_SIZE)],
-              col: BOARD_SIZE - Math.floor(Math.random() * 2),
-              orientation: randomOrientation
-            };
-          case 2: // Нижний край
-            return {
-              row: this.rows[BOARD_SIZE - 1 - Math.floor(Math.random() * 2)],
-              col: Math.floor(Math.random() * BOARD_SIZE) + 1,
-              orientation: randomOrientation
-            };
-          case 3: // Левый край
-            return {
-              row: this.rows[Math.floor(Math.random() * BOARD_SIZE)],
-              col: 1 + Math.floor(Math.random() * 2),
-              orientation: randomOrientation
-            };
-        }
-        break;
-
-      case 'spread':
-        // Равномерное распределение
-        const centerRows = ['В', 'Г', 'Д', 'Е', 'Ж', 'З'];
-        const centerCols = [3, 4, 5, 6, 7, 8];
-        return {
-          row: centerRows[Math.floor(Math.random() * centerRows.length)],
-          col: centerCols[Math.floor(Math.random() * centerCols.length)],
-          orientation: randomOrientation
-        };
-
-      default: // 'random'
-        return {
-          row: randomRow,
-          col: randomCol,
-          orientation: randomOrientation
-        };
-    }
-
-    return {
-      row: randomRow,
-      col: randomCol,
-      orientation: randomOrientation
-    };
-  }
-
-  /**
-   * Проверка возможности размещения корабля ИИ
-   */
-  private canPlaceAIShip(allShips: Ship[], ship: Ship, row: string, col: number, orientation: boolean): boolean {
-    const positions = this.getShipPositions(ship.size, row, col, orientation);
-
-    // Проверка границ
-    for (const pos of positions) {
-      if (!this.isValidPosition(pos.row, pos.col)) {
-        return false;
-      }
-    }
-
-    // Проверка пересечения с другими кораблями
-    for (const pos of positions) {
-      for (const otherShip of allShips) {
-        if (otherShip.placed && otherShip.positions.some(p => p.row === pos.row && p.col === pos.col)) {
-          return false;
-        }
-      }
-    }
-
-    // Проверка соседства
-    for (const pos of positions) {
-      if (this.hasAdjacentAIShip(allShips, pos.row, pos.col)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Проверка соседства для корабля ИИ
-   */
-  private hasAdjacentAIShip(allShips: Ship[], row: string, col: number): boolean {
-    const directions = [
-      { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 },
-      { r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 }
-    ];
-
-    for (const dir of directions) {
-      const newRowIndex = this.rows.indexOf(row) + dir.r;
-      const newCol = col + dir.c;
-
-      if (newRowIndex >= 0 && newRowIndex < this.rows.length &&
-        newCol >= 1 && newCol <= this.columns.length) {
-        const adjacentRow = this.rows[newRowIndex];
-
-        for (const ship of allShips) {
-          if (ship.placed && ship.positions.some(p => p.row === adjacentRow && p.col === newCol)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Размещение корабля ИИ
-   */
-  private placeAIShip(allShips: Ship[], ship: Ship, row: string, col: number, orientation: boolean): void {
-    const currentOrientation = this.isHorizontal;
-    this.isHorizontal = orientation;
-
-    const positions = this.getShipPositions(ship.size, row, col, orientation);
-
-    ship.positions = positions;
-    ship.placed = true;
-
-    this.isHorizontal = currentOrientation;
-  }
-
-  /**
-   * Случайное размещение корабля ИИ
-   */
-  private placeAIRandomly(allShips: Ship[], ship: Ship): void {
-    let placed = false;
-    let attempts = 0;
-
-    while (!placed && attempts < 100) {
-      const randomRow = this.rows[Math.floor(Math.random() * this.rows.length)];
-      const randomCol = this.columns[Math.floor(Math.random() * this.columns.length)];
-      const randomOrientation = Math.random() > 0.5;
-
-      if (this.canPlaceAIShip(allShips, ship, randomRow, randomCol, randomOrientation)) {
-        this.placeAIShip(allShips, ship, randomRow, randomCol, randomOrientation);
-        placed = true;
-      }
-
-      attempts++;
-    }
-  }
-
-  /**
-   * Конвертация кораблей ИИ в формат размещения
-   */
-  private convertShipsToPlacement(ships: Ship[]): ShipPlacement[] {
-    const placements: ShipPlacement[] = [];
-
-    ships.forEach(ship => {
-      if (ship.placed && ship.positions.length > 0) {
-        const firstPosition = ship.positions[0];
-        const lastPosition = ship.positions[ship.positions.length - 1];
-
-        const row = this.rows.indexOf(firstPosition.row);
-        const col = firstPosition.col - 1;
-        const vertical = firstPosition.row !== lastPosition.row;
-
-        placements.push({
-          shipId: ship.id,
-          size: ship.size,
-          row: row,
-          col: col,
-          vertical: vertical
-        });
-      }
-    });
-
-    return placements;
-  }
-
-  // ==================== МЕТОДЫ DRAG & DROP (остаются без изменений) ====================
+  // ==================== МЕТОДЫ DRAG & DROP ====================
 
   onDragStart(event: DragEvent) {
     const target = event.target as HTMLElement;
@@ -705,7 +388,7 @@ export class AiPlacementPageComponent {
 
     if (this.canPlaceShip(this.draggedShip, row, col)) {
       this.placeShip(this.draggedShip, row, col);
-      this.isPlayerReady = false; // Сброс готовности при изменении расстановки
+      this.isPlayerReady = false;
     }
 
     this.draggedShip = null;
@@ -1046,231 +729,19 @@ export class AiPlacementPageComponent {
   }
 
   private placeShipsCoastal(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          const isBorder = Math.random() > 0.1;
-          let row = '', col = 0;
-
-          if (isBorder) {
-            const side = Math.floor(Math.random() * 4);
-            switch(side) {
-              case 0:
-                row = this.rows[0];
-                col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-                break;
-              case 1:
-                row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-                col = BOARD_SIZE;
-                break;
-              case 2:
-                row = this.rows[BOARD_SIZE - 1];
-                col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-                break;
-              case 3:
-                row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-                col = 1;
-                break;
-            }
-          } else {
-            const borderZone = 2;
-            const randomBorder = Math.floor(Math.random() * 4);
-            switch(randomBorder) {
-              case 0:
-                row = this.rows[Math.floor(Math.random() * borderZone)];
-                col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-                break;
-              case 1:
-                row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-                col = BOARD_SIZE - Math.floor(Math.random() * borderZone);
-                break;
-              case 2:
-                row = this.rows[BOARD_SIZE - 1 - Math.floor(Math.random() * borderZone)];
-                col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-                break;
-              case 3:
-                row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-                col = 1 + Math.floor(Math.random() * borderZone);
-                break;
-            }
-          }
-
-          const orientation = shipType.size > 1 ? (Math.random() > 0.5 ? 'horizontal' : 'vertical') : 'horizontal';
-          const currentOrientation = this.isHorizontal;
-          this.isHorizontal = orientation === 'horizontal';
-
-          if (this.canPlaceShip({ size: shipType.size, type: shipType.type }, row, col)) {
-            this.placeShip({ size: shipType.size, type: shipType.type }, row, col);
-            placed = true;
-          }
-
-          this.isHorizontal = currentOrientation;
-          attempts++;
-        }
-
-        if (!placed) {
-          this.placeShipRandomly(shipType.size, shipType.type);
-        }
-      }
-    }
+    // ... (оставьте этот метод как есть)
   }
 
   private placeShipsDiagonal(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    const useMainDiagonal = Math.random() > 0.5;
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          let row = '', col = 0;
-          let rowIndex = 0;
-
-          if (useMainDiagonal) {
-            rowIndex = Math.floor(Math.random() * (BOARD_SIZE - shipType.size + 1));
-            const diagonalOffset = Math.floor(Math.random() * 3) - 1;
-            row = this.rows[rowIndex];
-            col = rowIndex + 1 + diagonalOffset;
-          } else {
-            rowIndex = Math.floor(Math.random() * (BOARD_SIZE - shipType.size + 1));
-            const diagonalOffset = Math.floor(Math.random() * 3) - 1;
-            row = this.rows[rowIndex];
-            col = BOARD_SIZE - rowIndex + diagonalOffset;
-          }
-
-          col = Math.max(1, Math.min(BOARD_SIZE, col));
-
-          const orientation = Math.random() > 0.7 ? 'horizontal' : 'vertical';
-          const currentOrientation = this.isHorizontal;
-          this.isHorizontal = orientation === 'horizontal';
-
-          if (this.canPlaceShip({ size: shipType.size, type: shipType.type }, row, col)) {
-            this.placeShip({ size: shipType.size, type: shipType.type }, row, col);
-            placed = true;
-          }
-
-          this.isHorizontal = currentOrientation;
-          attempts++;
-        }
-
-        if (!placed) {
-          this.placeShipRandomly(shipType.size, shipType.type);
-        }
-      }
-    }
+    // ... (оставьте этот метод как есть)
   }
 
   private placeShipsHalfField(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    const isVerticalSplit = Math.random() > 0.5;
-    const half = Math.random() > 0.5 ? 'first' : 'second';
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          let row = '', col = 0;
-
-          if (isVerticalSplit) {
-            if (half === 'first') {
-              row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-              col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + 1;
-            } else {
-              row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-              col = Math.floor(Math.random() * (BOARD_SIZE / 2)) + Math.floor(BOARD_SIZE / 2) + 1;
-            }
-          } else {
-            if (half === 'first') {
-              row = this.rows[Math.floor(Math.random() * (BOARD_SIZE / 2))];
-              col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-            } else {
-              row = this.rows[Math.floor(Math.random() * (BOARD_SIZE / 2)) + Math.floor(BOARD_SIZE / 2)];
-              col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-            }
-          }
-
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-          const currentOrientation = this.isHorizontal;
-          this.isHorizontal = orientation === 'horizontal';
-
-          if (this.canPlaceShip({ size: shipType.size, type: shipType.type }, row, col)) {
-            this.placeShip({ size: shipType.size, type: shipType.type }, row, col);
-            placed = true;
-          }
-
-          this.isHorizontal = currentOrientation;
-          attempts++;
-        }
-
-        if (!placed) {
-          this.placeShipRandomly(shipType.size, shipType.type);
-        }
-      }
-    }
+    // ... (оставьте этот метод как есть)
   }
 
   private placeShipsSpread(): void {
-    const shipTypes = [...SHIP_TYPES];
-    shipTypes.sort((a, b) => b.size - a.size);
-
-    for (const shipType of shipTypes) {
-      for (let i = 0; i < shipType.count; i++) {
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < 1000) {
-          let row = '', col = 0;
-          let isValidPosition = false;
-
-          while (!isValidPosition && attempts < 100) {
-            row = this.rows[Math.floor(Math.random() * BOARD_SIZE)];
-            col = Math.floor(Math.random() * BOARD_SIZE) + 1;
-
-            const rowIndex = this.rows.indexOf(row);
-            const isBorder = rowIndex === 0 || rowIndex === BOARD_SIZE - 1 || col === 1 || col === BOARD_SIZE;
-            const isCenter = rowIndex >= 3 && rowIndex <= 6 && col >= 4 && col <= 7;
-            const isDiagonal = rowIndex === col - 1 || rowIndex + col - 1 === BOARD_SIZE - 1;
-
-            isValidPosition = !isBorder && !isCenter && !isDiagonal;
-            if (Math.random() > 0.2) {
-              isValidPosition = true;
-            }
-
-            attempts++;
-          }
-
-          const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-          const currentOrientation = this.isHorizontal;
-          this.isHorizontal = orientation === 'horizontal';
-
-          if (this.canPlaceShip({ size: shipType.size, type: shipType.type }, row, col)) {
-            this.placeShip({ size: shipType.size, type: shipType.type }, row, col);
-            placed = true;
-          }
-
-          this.isHorizontal = currentOrientation;
-          attempts++;
-        }
-
-        if (!placed) {
-          this.placeShipRandomly(shipType.size, shipType.type);
-        }
-      }
-    }
+    // ... (оставьте этот метод как есть)
   }
 
   // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
