@@ -378,11 +378,16 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
    */
   private showGameOver(winner: string): void {
     if (winner === 'PLAYER') {
-      this.gameOverMessage = 'Поздравляем! Вы победили компьютер!';
+      //this.gameOverMessage = 'Поздравляем! Вы победили компьютер!';
+      this.router.navigate(['/win']);
+      return;
     } else if (winner === 'COMPUTER') {
-      this.gameOverMessage = 'Вы проиграли. Компьютер оказался сильнее.';
+      //this.gameOverMessage = 'Вы проиграли. Компьютер оказался сильнее.';
+      this.router.navigate(['/lose']);
+      return;
     } else {
       this.gameOverMessage = 'Игра завершена.';
+
     }
 
     this.showGameOverPopup = true;
@@ -417,9 +422,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
 
     this.http.post(apiUrl, null, { params }).subscribe({
       next: () => {
-        this.showSurrenderPopup = false;
-        this.gameOverMessage = 'Вы сдались. Компьютер победил.';
-        this.showGameOverPopup = true;
+        this.router.navigate(['/lose']);
       },
       error: (error) => {
         console.error('Ошибка при сдаче:', error);
@@ -435,38 +438,4 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
     this.showSurrenderPopup = false;
   }
 
-  /**
-   * Заглушка для предложения ничьи (в игре с ИИ не используется)
-   */
-  offerDraw(): void {
-    alert('В игре с компьютером ничья невозможна.');
-  }
-
-  /**
-   * Заглушка для закрытия попапа ничьи
-   */
-  closeDrawPopup(): void {
-    // Не используется в игре с ИИ
-  }
-
-  /**
-   * Заглушка для отмены предложения ничьи
-   */
-  cancelDrawOffer(): void {
-    // Не используется в игре с ИИ
-  }
-
-  /**
-   * Заглушка для принятия ничьи
-   */
-  acceptDraw(): void {
-    // Не используется в игре с ИИ
-  }
-
-  /**
-   * Заглушка для отклонения ничьи
-   */
-  declineDraw(): void {
-    // Не используется в игре с ИИ
-  }
 }
