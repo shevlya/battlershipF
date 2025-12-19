@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { WebSocketService } from '../../services/webSocket.service';
+import { HttpClient } from '@angular/common/http';
 
 /**
  * Интерфейс для представления корабля на игровом поле
@@ -103,7 +104,8 @@ export class AiPlacementPageComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private webSocketService: WebSocketService
+    private webSocketService: WebSocketService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -187,40 +189,69 @@ export class AiPlacementPageComponent {
   /**
    * Запуск игры против ИИ
    */
+  /**
+   * Запуск игры против ИИ
+   */
   startAIGame() {
+    console.log('🟢 [AiPlacementPage] startAIGame вызван');
+    console.log('🔍 Проверка размещения кораблей:', this.isAllShipsPlaced());
+
     if (this.isAllShipsPlaced()) {
-      console.log('Начало игры с ИИ');
+      console.log('✅ Все корабли размещены. Начинаем игру с ИИ.');
 
       // Конвертируем расстановку в формат для сервера
       const boardLayout = this.convertToBoardLayoutDTO();
+      console.log('📦 Создан boardLayout:', boardLayout);
 
-      // Подготавливаем сообщение для сервера
-      const aiGameMessage: AIGameStartMessage = {
-        playerId: this.currentPlayer.player_id,
-        boardLayout: boardLayout,
-        gameType: 'SINGLEPLAYER'
-      };
-
-      console.log('Отправка расстановки для игры с ИИ:', aiGameMessage);
-
-      // В реальном приложении здесь был бы вызов API
-      // Для демо просто переходим на страницу игры с ИИ
+      // Сохраняем данные для передачи в компонент игры
       this.navigateToAIGame(boardLayout);
+
     } else {
+      console.log('❌ Не все корабли размещены!');
       alert('Разместите все корабли перед началом игры!');
     }
   }
 
-  /**
-   * Переход на страницу игры с ИИ
-   */
+// Обновите метод navigateToAIGame():
   private navigateToAIGame(boardLayout: BoardLayoutDTO) {
+    console.log('🟢 [AiPlacementPage] navigateToAIGame вызван');
+    console.log('📋 Данные пользователя:', this.currentPlayer);
+
+    if (!this.currentPlayer) {
+      console.error('❌ Ошибка: currentPlayer равен null!');
+      return;
+    }
+
     // Сохраняем расстановку в sessionStorage для передачи на следующую страницу
     sessionStorage.setItem('aiGameBoardLayout', JSON.stringify(boardLayout));
     sessionStorage.setItem('currentPlayerId', this.currentPlayer.player_id.toString());
 
+    console.log('💾 Данные сохранены в sessionStorage:');
+    console.log('   - aiGameBoardLayout:', JSON.stringify(boardLayout).substring(0, 100) + '...');
+    console.log('   - currentPlayerId:', this.currentPlayer.player_id.toString());
+
+    // Проверяем наличие данных
+    const savedLayout = sessionStorage.getItem('aiGameBoardLayout');
+    const savedPlayerId = sessionStorage.getItem('currentPlayerId');
+
+    console.log('✅ Проверка сохранения данных:');
+    console.log('   - savedLayout есть?', !!savedLayout);
+    console.log('   - savedPlayerId есть?', !!savedPlayerId);
+
     // Переход на страницу игры с ИИ
-    this.router.navigate(['/single-player-game']);
+    console.log('🔄 [AiPlacementPage] Переход на /single-player-game');
+
+    this.router.navigate(['/single-player-game']).then(success => {
+      if (success) {
+        console.log('✅ [AiPlacementPage] Переход на /single-player-game выполнен успешно');
+      } else {
+        console.error('❌ [AiPlacementPage] Переход на /single-player-game не удался');
+        console.log('   - Текущий URL:', window.location.href);
+        console.log('   - Текущий маршрут:', this.router.url);
+      }
+    }).catch(err => {
+      console.error('❌ [AiPlacementPage] Ошибка при переходе на /single-player-game:', err);
+    });
   }
 
   // ==================== МЕТОДЫ DRAG & DROP ====================

@@ -1,21 +1,11 @@
 <div class="game-container">
   <div class="game-header">
-    <div class="game-id">Игра с компьютером #{{ gameId }}</div>
-    <button class="btn back-btn" (click)="router.navigate(['/'])">Вернуться в меню</button>
-  </div>
-
-  <div *ngIf="loading" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <div>Загрузка игры...</div>
-  </div>
-
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-    <button class="btn retry-btn" (click)="loadGameState()">Попробовать снова</button>
+    <div class="game-id">Game ID: {{ gameId }}</div>
+    <div class="game-mode">Режим: Игра с компьютером</div>
   </div>
 
   <div class="fields-container">
-    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ КОМПЬЮТЕРА по вам -->
+    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ КОМПЬЮТЕРА -->
     <div class="field-section">
       <h3>Ваше поле</h3>
       <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
@@ -29,15 +19,15 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i][j] === 'S' && myHits[i][j] !== 'H'"
-            [class.hit]="myHits[i][j] === 'H'"
-            [class.miss]="myHits[i][j] === 'M'"
+            [class.ship]="myField[i]?.[j] === 'S' && myHits[i]?.[j] !== 'H'"
+            [class.hit]="myHits[i]?.[j] === 'H'"
+            [class.miss]="myHits[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, true)">
 
-            @if (myHits[i][j] === 'H') {
+            @if (myHits[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i][j] === 'M') {
+            @if (myHits[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -45,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Поле компьютера - отображает ТОЛЬКО ВАШИ выстрелы по компьютеру -->
+    <!-- Поле компьютера - отображает ТОЛЬКО ВАШИ выстрелы -->
     <div class="field-section">
       <h3>Поле компьютера</h3>
       <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
@@ -59,16 +49,16 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentField[i][j] === 'H'"
-            [class.miss]="opponentField[i][j] === 'M'"
+            [class.hit]="opponentField[i]?.[j] === 'H'"
+            [class.miss]="opponentField[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && opponentField[i][j] === ' ' && !gameState.gameOver"
+            [class.selectable]="isYourTurn && opponentField[i]?.[j] === ' '"
             (click)="onOpponentCellClick(i, j)">
 
-            @if (opponentField[i][j] === 'H') {
+            @if (opponentField[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentField[i][j] === 'M') {
+            @if (opponentField[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -92,21 +82,14 @@
     </div>
 
     <div class="controls-center">
-      <div class="turn-status" [class.your-turn]="isYourTurn" [class.computer-turn]="!isYourTurn">
-        <span *ngIf="gameState.gameOver">
-          {{ gameState.winner === 'HUMAN' ? 'Вы победили!' : 'Компьютер победил!' }}
-        </span>
-        <span *ngIf="!gameState.gameOver">
-          {{ isYourTurn ? 'Ваш ход' : 'Ход компьютера...' }}
-        </span>
+      <div class="turn-status" [class.your-turn]="isYourTurn" [class.opponent-turn]="!isYourTurn">
+        {{ isYourTurn ? 'Ваш ход' : 'Компьютер думает...' }}
       </div>
     </div>
 
     <div class="controls-right">
       <div class="action-buttons">
-        <button class="btn coral" (click)="surrender()" [disabled]="gameState.gameOver || loading">
-          Сдаться
-        </button>
+        <button class="btn coral" (click)="surrender()">Сдаться</button>
       </div>
     </div>
   </div>
@@ -123,32 +106,25 @@
       <div class="popup-body">
         <p class="warning-text">После нажатия кнопки "Сдаться", действие нельзя будет отменить!</p>
         <div class="surrender-actions">
-          <button class="btn coral" (click)="confirmSurrender()" [disabled]="loading">
-            {{ loading ? 'Обработка...' : 'Сдаться' }}
-          </button>
-          <button class="btn" (click)="cancelSurrender()" [disabled]="loading">Отмена</button>
+          <button class="btn coral" (click)="confirmSurrender()">Сдаться</button>
+          <button class="btn" (click)="cancelSurrender()">Отмена</button>
         </div>
       </div>
     </div>
   </div>
 }
 
-<!-- Попап окончания игры -->
+<!-- Попап завершения игры -->
 @if (showGameOverPopup) {
-  <div class="popup-overlay">
-    <div class="popup-content">
+  <div class="popup-overlay" (click)="closeGameOverPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
       <div class="popup-header">
-        <h3>Игра завершена</h3>
+        <h3>Игра завершена!</h3>
       </div>
       <div class="popup-body">
-        <p class="result-message">{{ gameOverMessage }}</p>
+        <p class="game-over-message">{{ gameOverMessage }}</p>
         <div class="game-over-actions">
-          <button class="btn primary" (click)="router.navigate(['/game/new-computer'])">
-            Новая игра
-          </button>
-          <button class="btn" (click)="router.navigate(['/'])">
-            В меню
-          </button>
+          <button class="btn primary" (click)="closeGameOverPopup()">В главное меню</button>
         </div>
       </div>
     </div>

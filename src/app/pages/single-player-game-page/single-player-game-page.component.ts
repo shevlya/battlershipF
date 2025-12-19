@@ -1,265 +1,472 @@
-import { Component, OnInit } from '@angular/core';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import { GameService } from '../../services/game.service';
-import { GameResponse, GameState } from '../../services/models/game.model';
-import { finalize } from 'rxjs/operators';
-import {ComputerStrategy} from "../../services/models/computer.model";
-import {CommonModule, NgForOf, NgIf} from "@angular/common";
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+interface GameState {
+  gameId: number;
+  playerId: number;
+  playerField: string[][];
+  opponentField: string[][];
+  playerHits: string[][];
+  opponentHits: string[][];
+  playerShipsLeft: number;
+  opponentShipsLeft: number;
+  isPlayerTurn: boolean;
+  gameOver: boolean;
+  winner: string;
+  lastAIShot?: number[];
+  lastAIShotHit?: boolean;
+  message?: string;
+}
+
+interface ShipPlacement {
+  shipId: number;
+  size: number;
+  row: number;
+  col: number;
+  vertical: boolean;
+}
+
+interface BoardLayoutDTO {
+  ships: ShipPlacement[];
+  matrix: string[][];
+}
 
 @Component({
   selector: 'app-single-player-game-page',
-  templateUrl: './single-player-game-page.component.html',
   standalone: true,
-  styleUrls: ['./single-player-game-page.component.scss'],
-  imports: [
-    CommonModule,
-    NgForOf,
-    NgIf
-  ]
+  imports: [CommonModule, FormsModule],
+  templateUrl: './single-player-game-page.component.html',
+  styleUrls: ['./single-player-game-page.component.scss']
 })
-export class SinglePlayerGamePageComponent implements OnInit {
-  gameId!: number;
-  gameState: GameState = {
-    status: 'WAITING',
-    currentPlayer: 'HUMAN',
-    humanBoard: this.createEmptyBoard(),
-    computerBoard: this.createEmptyBoard(),
-    shipsPlaced: false,
-    gameOver: false,
-    winner: null
-  };
-
-  // Для отображения координат
-  rows = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-  columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
+  // Конфигурация поля
+  rows = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К'];
+  columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   // Состояние игры
-  isYourTurn = true;
-  myShipsCount = 10;
-  opponentShipsCount = 10;
-  myShotsCount = 0;
-  myHitsCount = 0;
+  gameId: number | null = null;
+  playerId: number = 0;
+  gameState: GameState = {
+    gameId: 0,
+    playerId: 0,
+    playerField: this.createEmptyStringField(),
+    opponentField: this.createEmptyStringField(),
+    playerHits: this.createEmptyStringField(),
+    opponentHits: this.createEmptyStringField(),
+    playerShipsLeft: 0,
+    opponentShipsLeft: 0,
+    isPlayerTurn: false,
+    gameOver: false,
+    winner: ''
+  };
 
-  // Попапы
-  showSurrenderPopup = false;
-  showGameOverPopup = false;
-  gameOverMessage = '';
+  // Статистика
+  myShotsCount: number = 0;
+  myHitsCount: number = 0;
 
-  loading = false;
-  error = '';
+  // UI состояния
+  showSurrenderPopup: boolean = false;
+  showGameOverPopup: boolean = false;
+  gameOverMessage: string = '';
 
-  // Доски для отображения
-  myField: string[][] = this.createEmptyBoard();
-  myHits: string[][] = this.createEmptyBoard(); // 'H' для попаданий, 'M' для промахов
-  opponentField: string[][] = this.createEmptyBoard(); // 'H' для попаданий, 'M' для промахов
+  // Таймер для автоматических действий
+  private aiThinkingTimer: any = null;
+  private aiTurnDelay: number = 1000; // 1 секунда на "раздумья" ИИ
 
   constructor(
-    private route: ActivatedRoute,
-    protected router: Router,
-    private gameService: GameService
-  ) { }
+    private router: Router,
+    private http: HttpClient
+  ) {}
 
   ngOnInit(): void {
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.gameId = +params['id'];
-        this.loadGameState();
-      } else {
-        this.startNewGame();
-      }
-    });
+    this.loadGameFromStorage();
   }
 
-  startNewGame(): void {
-    this.loading = true;
-    this.error = '';
+  ngOnDestroy(): void {
+    if (this.aiThinkingTimer) {
+      clearTimeout(this.aiThinkingTimer);
+    }
+  }
 
-    // Получаем выбранную стратегию компьютера из localStorage или используем по умолчанию
-    const selectedStrategy = localStorage.getItem('selectedComputerStrategy') || 'coastal';
+  /**
+   * Загрузка игры из sessionStorage
+   */
+  private loadGameFromStorage(): void {
+    try {
+      // Получаем данные из sessionStorage
+      const boardLayoutStr = sessionStorage.getItem('aiGameBoardLayout');
+      const playerIdStr = sessionStorage.getItem('currentPlayerId');
 
-    this.gameService.createSinglePlayerGame(<ComputerStrategy>selectedStrategy).pipe(
-      finalize(() => this.loading = false)
-    ).subscribe({
-      next: (game: GameResponse) => {
-        this.gameId = game.id;
-        this.updateGameState(game.state);
-        this.router.navigate(['/game/computer', this.gameId]);
+      if (!boardLayoutStr || !playerIdStr) {
+        console.error('Данные игры не найдены в sessionStorage');
+        this.router.navigate(['/ai-placement']);
+        return;
+      }
+
+      // Парсим данные
+      const boardLayout: BoardLayoutDTO = JSON.parse(boardLayoutStr);
+      this.playerId = parseInt(playerIdStr, 10);
+
+      console.log('Загружены данные игры:', {
+        playerId: this.playerId,
+        boardLayout
+      });
+
+      // Создаем новую игру на бэкенде
+      this.createAIGame(boardLayout);
+
+    } catch (error) {
+      console.error('Ошибка при загрузке игры:', error);
+      this.router.navigate(['/ai-placement']);
+    }
+  }
+
+  /**
+   * Создание новой игры с ИИ на бэкенде
+   */
+  private createAIGame(boardLayout: BoardLayoutDTO): void {
+    const apiUrl = 'http://localhost:8080/api/ai/game/create';
+
+    const requestBody = {
+      playerId: this.playerId,
+      boardLayout: boardLayout,
+      gameType: 'SINGLEPLAYER'
+    };
+
+    console.log('Отправка запроса на создание игры:', requestBody);
+
+    this.http.post<GameState>(apiUrl, requestBody).subscribe({
+      next: (response) => {
+        console.log('Игра создана успешно:', response);
+
+        this.gameId = response.gameId;
+        this.updateGameState(response);
+
+        // Сохраняем gameId в sessionStorage
+        sessionStorage.setItem('currentGameId', response.gameId.toString());
       },
-      error: (err) => {
-        this.error = 'Не удалось создать новую игру. Попробуйте еще раз.';
-        console.error('Error creating game:', err);
+      error: (error) => {
+        console.error('Ошибка при создании игры:', error);
+        alert('Не удалось создать игру. Попробуйте снова.');
+        this.router.navigate(['/ai-placement']);
       }
     });
   }
 
-  loadGameState(): void {
-    this.loading = true;
-    this.error = '';
-
-    this.gameService.getSinglePlayerGameState(this.gameId).pipe(
-      finalize(() => this.loading = false)
-    ).subscribe({
-      next: (gameState: GameState) => {
-        this.updateGameState(gameState);
-      },
-      error: (err) => {
-        this.error = 'Не удалось загрузить состояние игры.';
-        console.error('Error loading game state:', err);
-      }
-    });
-  }
-
-  updateGameState(gameState: GameState): void {
-    this.gameState = gameState;
-
-    // Обновляем отображение досок
-    this.updateBoards();
-
-    // Обновляем состояние хода
-    this.isYourTurn = gameState.currentPlayer === 'HUMAN';
-
-    // Если игра завершена, показываем попап
-    if (gameState.gameOver && gameState.winner) {
-      this.showGameOverPopup = true;
-      this.gameOverMessage = gameState.winner === 'HUMAN'
-        ? 'Поздравляем! Вы победили компьютер!'
-        : 'Компьютер победил. Попробуйте еще раз!';
-    }
-
-    // Обновляем счетчики
-    this.updateShipCounts();
-    this.updateShotStats();
-  }
-
-  updateBoards(): void {
-    // Доска игрока (мои корабли и выстрелы компьютера)
-    const humanBoard = this.gameState.humanBoard;
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        this.myField[i][j] = humanBoard[i][j] || ' ';
-        // Отмечаем попадания компьютера
-        if (humanBoard[i][j] === 'X') {
-          this.myHits[i][j] = 'H';
-        } else if (humanBoard[i][j] === 'O') {
-          this.myHits[i][j] = 'M';
-        }
-      }
-    }
-
-    // Доска компьютера (только мои выстрелы)
-    const computerBoard = this.gameState.computerBoard;
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        // Показываем только результаты наших выстрелов
-        if (computerBoard[i][j] === 'X') {
-          this.opponentField[i][j] = 'H'; // Попадание
-        } else if (computerBoard[i][j] === 'O') {
-          this.opponentField[i][j] = 'M'; // Промах
-        } else {
-          this.opponentField[i][j] = ' '; // Пусто (корабли скрыты)
-        }
-      }
-    }
-  }
-
-  updateShipCounts(): void {
-    // Подсчет оставшихся кораблей игрока
-    this.myShipsCount = 0;
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.myField[i][j] === 'S' && this.myHits[i][j] !== 'H') {
-          this.myShipsCount++;
-        }
-      }
-    }
-
-    // Подсчет оставшихся кораблей компьютера
-    this.opponentShipsCount = 0;
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        // Считаем по исходной доске компьютера (где 'S' - корабли)
-        if (this.gameState.computerBoard[i][j] === 'S' && this.opponentField[i][j] !== 'H') {
-          this.opponentShipsCount++;
-        }
-      }
-    }
-  }
-
-  updateShotStats(): void {
-    this.myShotsCount = 0;
-    this.myHitsCount = 0;
-
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.opponentField[i][j] === 'H' || this.opponentField[i][j] === 'M') {
-          this.myShotsCount++;
-        }
-        if (this.opponentField[i][j] === 'H') {
-          this.myHitsCount++;
-        }
-      }
-    }
-  }
-
-  isShipSunk(row: number, col: number, isMyField: boolean): boolean {
-    // Упрощенная логика для примера
-    return false;
-  }
-
+  /**
+   * Выстрел игрока по полю ИИ
+   */
   onOpponentCellClick(row: number, col: number): void {
-    if (!this.isYourTurn || this.gameState.gameOver) {
+    if (!this.isYourTurn ||
+      this.gameState.gameOver ||
+      this.gameState.opponentField[row]?.[col] !== ' ') {
       return;
     }
 
-    if (this.opponentField[row][col] !== ' ') {
-      return; // Уже стреляли в эту клетку
-    }
+    this.makeMove(row, col);
+  }
 
-    this.loading = true;
-    this.error = '';
+  /**
+   * Отправка хода на сервер
+   */
+  private makeMove(row: number, col: number): void {
+    if (!this.gameId || !this.playerId) return;
 
-    this.gameService.makePlayerMove(this.gameId, row, col).pipe(
-      finalize(() => this.loading = false)
-    ).subscribe({
-      next: (updatedGame: GameResponse) => {
-        this.updateGameState(updatedGame.state);
+    const apiUrl = `http://localhost:8080/api/ai/game/${this.gameId}/move`;
+
+    const requestBody = {
+      playerId: this.playerId,
+      row: row,
+      col: col
+    };
+
+    console.log('Отправка хода:', requestBody);
+
+    this.http.post<GameState>(apiUrl, requestBody).subscribe({
+      next: (response) => {
+        console.log('Ход обработан:', response);
+
+        this.updateGameState(response);
+
+        // Если игра не окончена и следующий ход ИИ
+        if (!response.gameOver && !response.isPlayerTurn) {
+          // ИИ делает ход автоматически через задержку
+          this.scheduleAITurn();
+        }
       },
-      error: (err) => {
-        this.error = 'Ошибка при совершении хода. Попробуйте еще раз.';
-        console.error('Error making move:', err);
+      error: (error) => {
+        console.error('Ошибка при выполнении хода:', error);
+        alert('Не удалось выполнить ход. Попробуйте снова.');
       }
     });
   }
 
+  /**
+   * Запланировать ход ИИ через задержку
+   */
+  private scheduleAITurn(): void {
+    if (this.aiThinkingTimer) {
+      clearTimeout(this.aiThinkingTimer);
+    }
+
+    this.aiThinkingTimer = setTimeout(() => {
+      this.makeAIMove();
+    }, this.aiTurnDelay);
+  }
+
+  /**
+   * ИИ делает ход (симуляция или запрос к серверу)
+   */
+  private makeAIMove(): void {
+    if (!this.gameId || !this.playerId) return;
+
+    // Для ИИ ход уже сделан на сервере, нужно просто получить обновленное состояние
+    this.getGameState();
+  }
+
+  /**
+   * Получение текущего состояния игры
+   */
+  private getGameState(): void {
+    if (!this.gameId || !this.playerId) return;
+
+    const apiUrl = `http://localhost:8080/api/ai/game/${this.gameId}/state`;
+    const params = { playerId: this.playerId.toString() };
+
+    this.http.get<GameState>(apiUrl, { params }).subscribe({
+      next: (response) => {
+        this.updateGameState(response);
+
+        // Если игра не окончена и снова ход ИИ
+        if (!response.gameOver && !response.isPlayerTurn) {
+          this.scheduleAITurn();
+        }
+      },
+      error: (error) => {
+        console.error('Ошибка при получении состояния:', error);
+      }
+    });
+  }
+
+  /**
+   * Обновление состояния игры
+   */
+  private updateGameState(state: GameState): void {
+    this.gameState = {
+      ...this.gameState,
+      ...state
+    };
+
+    // Обновляем статистику
+    this.updateStats();
+
+    // Проверяем, окончена ли игра
+    if (state.gameOver) {
+      this.showGameOver(state.winner);
+    }
+  }
+
+  /**
+   * Обновление статистики выстрелов
+   */
+  private updateStats(): void {
+    let shots = 0;
+    let hits = 0;
+
+    // Считаем выстрелы по полю противника
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        const cell = this.gameState.opponentField[i]?.[j];
+        if (cell === 'H' || cell === 'M') {
+          shots++;
+          if (cell === 'H') hits++;
+        }
+      }
+    }
+
+    this.myShotsCount = shots;
+    this.myHitsCount = hits;
+  }
+
+  /**
+   * Создание пустого поля
+   */
+  private createEmptyStringField(): string[][] {
+    return Array(10).fill(null).map(() => Array(10).fill(' '));
+  }
+
+  // ==================== ГЕТТЕРЫ ДЛЯ ШАБЛОНА ====================
+
+  get isYourTurn(): boolean {
+    return this.gameState.isPlayerTurn && !this.gameState.gameOver;
+  }
+
+  get myShipsCount(): number {
+    return this.gameState.playerShipsLeft;
+  }
+
+  get opponentShipsCount(): number {
+    return this.gameState.opponentShipsLeft;
+  }
+
+  get myField(): string[][] {
+    return this.gameState.playerField || this.createEmptyStringField();
+  }
+
+  get opponentField(): string[][] {
+    return this.gameState.opponentField || this.createEmptyStringField();
+  }
+
+  get myHits(): string[][] {
+    return this.gameState.opponentHits || this.createEmptyStringField();
+  }
+
+  // ==================== ЛОГИКА ИГРЫ ====================
+
+  /**
+   * Проверка, является ли корабль потопленным
+   */
+  isShipSunk(row: number, col: number, isMyField: boolean): boolean {
+    const field = isMyField ? this.myField : this.opponentField;
+    const hits = isMyField ? this.myHits : this.opponentField;
+
+    if (!field[row] || field[row][col] !== 'S') {
+      return false;
+    }
+
+    return this.checkShipSunk(row, col, field, hits);
+  }
+
+  /**
+   * Рекурсивная проверка потопления корабля
+   */
+  private checkShipSunk(row: number, col: number, field: string[][], hits: string[][]): boolean {
+    const directions = [
+      { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }
+    ];
+
+    let isSunk = true;
+    const visited = new Set<string>();
+
+    const dfs = (r: number, c: number) => {
+      const key = `${r},${c}`;
+      if (visited.has(key) || r < 0 || r >= 10 || c < 0 || c >= 10) return;
+
+      visited.add(key);
+
+      if (field[r][c] === 'S') {
+        if (hits[r][c] !== 'H') {
+          isSunk = false;
+          return;
+        }
+
+        for (const dir of directions) {
+          dfs(r + dir.r, c + dir.c);
+        }
+      }
+    };
+
+    dfs(row, col);
+    return isSunk;
+  }
+
+  /**
+   * Показать окно завершения игры
+   */
+  private showGameOver(winner: string): void {
+    if (winner === 'PLAYER') {
+      this.gameOverMessage = 'Поздравляем! Вы победили компьютер!';
+    } else if (winner === 'COMPUTER') {
+      this.gameOverMessage = 'Вы проиграли. Компьютер оказался сильнее.';
+    } else {
+      this.gameOverMessage = 'Игра завершена.';
+    }
+
+    this.showGameOverPopup = true;
+  }
+
+  /**
+   * Закрыть окно завершения игры и вернуться в меню
+   */
+  closeGameOverPopup(): void {
+    this.showGameOverPopup = false;
+    this.router.navigate(['/main-menu']);
+  }
+
+  /**
+   * Предложение сдачи
+   */
   surrender(): void {
     this.showSurrenderPopup = true;
   }
 
+  /**
+   * Подтверждение сдачи
+   */
   confirmSurrender(): void {
-    this.loading = true;
-    this.error = '';
+    if (!this.gameId || !this.playerId) {
+      this.router.navigate(['/main-menu']);
+      return;
+    }
 
-    this.gameService.surrenderGame(this.gameId).pipe(
-      finalize(() => this.loading = false)
-    ).subscribe({
-      next: (updatedGame: GameResponse) => {
-        this.updateGameState(updatedGame.state);
+    const apiUrl = `http://localhost:8080/api/ai/game/${this.gameId}/surrender`;
+    const params = { playerId: this.playerId.toString() };
+
+    this.http.post(apiUrl, null, { params }).subscribe({
+      next: () => {
         this.showSurrenderPopup = false;
+        this.gameOverMessage = 'Вы сдались. Компьютер победил.';
+        this.showGameOverPopup = true;
       },
-      error: (err) => {
-        this.error = 'Ошибка при сдаче. Попробуйте еще раз.';
-        console.error('Error surrendering:', err);
-        this.loading = false;
+      error: (error) => {
+        console.error('Ошибка при сдаче:', error);
+        alert('Не удалось сдаться. Попробуйте снова.');
       }
     });
   }
 
+  /**
+   * Отмена сдачи
+   */
   cancelSurrender(): void {
     this.showSurrenderPopup = false;
   }
 
-  // Вспомогательные методы
-  createEmptyBoard(): string[][] {
-    return Array(10).fill(0).map(() => Array(10).fill(' '));
+  /**
+   * Заглушка для предложения ничьи (в игре с ИИ не используется)
+   */
+  offerDraw(): void {
+    alert('В игре с компьютером ничья невозможна.');
+  }
+
+  /**
+   * Заглушка для закрытия попапа ничьи
+   */
+  closeDrawPopup(): void {
+    // Не используется в игре с ИИ
+  }
+
+  /**
+   * Заглушка для отмены предложения ничьи
+   */
+  cancelDrawOffer(): void {
+    // Не используется в игре с ИИ
+  }
+
+  /**
+   * Заглушка для принятия ничьи
+   */
+  acceptDraw(): void {
+    // Не используется в игре с ИИ
+  }
+
+  /**
+   * Заглушка для отклонения ничьи
+   */
+  declineDraw(): void {
+    // Не используется в игре с ИИ
   }
 }

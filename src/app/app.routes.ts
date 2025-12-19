@@ -37,13 +37,11 @@ export const routes: Routes = [
   { path: 'placement', component: PlacementUserPageComponent},
   { path: 'two-players-field', component: TwoPlayersFieldComponent},
   { path: 'two-players-field/:gameId', component: TwoPlayersFieldComponent },
-  { path: '**', redirectTo: '' },
   {
     path: 'game/ai-placement',
     component: AiPlacementPageComponent
   },
-  {
-    path: 'game/computer/:id',
-    component: SinglePlayerGamePageComponent
-  },
+  { path: 'single-player-game', component: SinglePlayerGamePageComponent },
+  { path: '**', redirectTo: '' },
+
 ];
