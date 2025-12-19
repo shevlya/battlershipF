@@ -372,6 +372,11 @@
   }
 }
 
+.game-over-message {
+  display: grid;
+  place-items: center; /* Центрирование по горизонтали и вертикали */
+  margin-top: 20px;
+}
 .popup-body {
   padding: 24px;
 
@@ -524,4 +529,5 @@
     font-size: 16px;
     padding: 10px 20px;
   }
+
 }

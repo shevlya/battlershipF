@@ -393,7 +393,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
    */
   closeGameOverPopup(): void {
     this.showGameOverPopup = false;
-    this.router.navigate(['/main-menu']);
+    this.router.navigate(['/lobby']);
   }
 
   /**
