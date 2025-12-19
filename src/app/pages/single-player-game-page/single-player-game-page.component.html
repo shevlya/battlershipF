@@ -1,22 +1,21 @@
 <div class="game-container">
   <div class="game-header">
-    <div class="game-id">Game ID: {{ gameId }}</div>
-    <div class="player-name">Игрок: {{ playerName }}</div>
-    @if (!isGameStarted && playerShips.length > 0) {
-      <div class="start-button-container">
-        <button class="btn primary" (click)="startGame()" [disabled]="isLoading">
-          @if (isLoading) {
-            <span>Запуск игры...</span>
-          } @else {
-            <span>Начать игру</span>
-          }
-        </button>
-      </div>
-    }
+    <div class="game-id">Игра с компьютером #{{ gameId }}</div>
+    <button class="btn back-btn" (click)="router.navigate(['/'])">Вернуться в меню</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div>Загрузка игры...</div>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn retry-btn" (click)="loadGameState()">Попробовать снова</button>
   </div>
 
   <div class="fields-container">
-    <!-- Ваше поле -->
+    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ КОМПЬЮТЕРА по вам -->
     <div class="field-section">
       <h3>Ваше поле</h3>
       <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
@@ -30,34 +29,23 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i] && myField[i][j] === 'SHIP' && !myHits[i][j]"
-            [class.hit]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'HIT'"
-            [class.miss]="myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'MISS'"
+            [class.ship]="myField[i][j] === 'S' && myHits[i][j] !== 'H'"
+            [class.hit]="myHits[i][j] === 'H'"
+            [class.miss]="myHits[i][j] === 'M'"
             [class.sunk]="isShipSunk(i, j, true)">
-            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'HIT') {
+
+            @if (myHits[i][j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i] && myHits[i][j] && myField[i] && myField[i][j] === 'MISS') {
+            @if (myHits[i][j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
         </div>
       </div>
-      @if (computerShotsCount > 0) {
-        <div class="stats">
-          <div class="stat-item">
-            <span class="stat-label">Выстрелы компьютера:</span>
-            <span class="stat-value">{{ computerShotsCount }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Попадания компьютера:</span>
-            <span class="stat-value hits">{{ computerHitsCount }}</span>
-          </div>
-        </div>
-      }
     </div>
 
-    <!-- Поле компьютера -->
+    <!-- Поле компьютера - отображает ТОЛЬКО ВАШИ выстрелы по компьютеру -->
     <div class="field-section">
       <h3>Поле компьютера</h3>
       <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
@@ -71,32 +59,21 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'HIT'"
-            [class.miss]="opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'MISS'"
+            [class.hit]="opponentField[i][j] === 'H'"
+            [class.miss]="opponentField[i][j] === 'M'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && isGameStarted && opponentHits[i] && !opponentHits[i][j]"
+            [class.selectable]="isYourTurn && opponentField[i][j] === ' ' && !gameState.gameOver"
             (click)="onOpponentCellClick(i, j)">
-            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'HIT') {
+
+            @if (opponentField[i][j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentHits[i] && opponentHits[i][j] && opponentField[i] && opponentField[i][j] === 'MISS') {
+            @if (opponentField[i][j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
         </div>
       </div>
-      @if (playerShotsCount > 0) {
-        <div class="stats">
-          <div class="stat-item">
-            <span class="stat-label">Ваши выстрелы:</span>
-            <span class="stat-value">{{ playerShotsCount }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Ваши попадания:</span>
-            <span class="stat-value hits">{{ playerHitsCount }}</span>
-          </div>
-        </div>
-      }
     </div>
   </div>
 
@@ -104,42 +81,32 @@
     <div class="controls-left">
       <div class="shots-info">
         <div class="shot-stat">
-          <span class="label">Точность:</span>
-          <span class="value">
-            @if (playerShotsCount > 0) {
-              {{ (playerHitsCount / playerShotsCount * 100).toFixed(1) }}%
-            } @else {
-              0%
-            }
-          </span>
+          <span class="label">Ваши выстрелы:</span>
+          <span class="value">{{ myShotsCount }}</span>
         </div>
         <div class="shot-stat">
-          <span class="label">Ход:</span>
-          <span class="value">{{ playerShotsCount + computerShotsCount + 1 }}</span>
+          <span class="label">Попадания:</span>
+          <span class="value hits">{{ myHitsCount }}</span>
         </div>
       </div>
     </div>
 
     <div class="controls-center">
-      <div class="turn-status" [class.your-turn]="isYourTurn && isGameStarted" [class.computer-turn]="!isYourTurn && isGameStarted" [class.waiting]="!isGameStarted">
-        @if (!isGameStarted) {
-          <span>Готов к игре</span>
-        } @else if (isYourTurn) {
-          <span>Ваш ход</span>
-        } @else {
-          <span>Ход компьютера</span>
-        }
+      <div class="turn-status" [class.your-turn]="isYourTurn" [class.computer-turn]="!isYourTurn">
+        <span *ngIf="gameState.gameOver">
+          {{ gameState.winner === 'HUMAN' ? 'Вы победили!' : 'Компьютер победил!' }}
+        </span>
+        <span *ngIf="!gameState.gameOver">
+          {{ isYourTurn ? 'Ваш ход' : 'Ход компьютера...' }}
+        </span>
       </div>
     </div>
 
     <div class="controls-right">
       <div class="action-buttons">
-        @if (isGameStarted) {
-          <button class="btn" (click)="pauseGame()">Пауза</button>
-          <button class="btn coral" (click)="surrender()">Сдаться</button>
-        } @else {
-          <button class="btn" (click)="restartGame()">Новая игра</button>
-        }
+        <button class="btn coral" (click)="surrender()" [disabled]="gameState.gameOver || loading">
+          Сдаться
+        </button>
       </div>
     </div>
   </div>
@@ -154,45 +121,36 @@
         <button class="popup-close" (click)="cancelSurrender()">&times;</button>
       </div>
       <div class="popup-body">
-        <p class="warning-text">После нажатия кнопки "Сдаться", игра будет завершена поражением!</p>
+        <p class="warning-text">После нажатия кнопки "Сдаться", действие нельзя будет отменить!</p>
         <div class="surrender-actions">
-          <button class="btn coral" (click)="confirmSurrender()">Сдаться</button>
-          <button class="btn" (click)="cancelSurrender()">Отмена</button>
+          <button class="btn coral" (click)="confirmSurrender()" [disabled]="loading">
+            {{ loading ? 'Обработка...' : 'Сдаться' }}
+          </button>
+          <button class="btn" (click)="cancelSurrender()" [disabled]="loading">Отмена</button>
         </div>
       </div>
     </div>
   </div>
 }
 
-<!-- Попап для паузы -->
-@if (showPausePopup) {
-  <div class="popup-overlay" (click)="resumeGame()">
-    <div class="popup-content" (click)="$event.stopPropagation()">
+<!-- Попап окончания игры -->
+@if (showGameOverPopup) {
+  <div class="popup-overlay">
+    <div class="popup-content">
       <div class="popup-header">
-        <h3>Игра на паузе</h3>
-        <button class="popup-close" (click)="resumeGame()">&times;</button>
+        <h3>Игра завершена</h3>
       </div>
       <div class="popup-body">
-        <p>Игра приостановлена. Возобновить игру?</p>
-        <div class="pause-actions">
-          <button class="btn primary" (click)="resumeGame()">Продолжить</button>
-          <button class="btn" (click)="surrender()">Сдаться</button>
+        <p class="result-message">{{ gameOverMessage }}</p>
+        <div class="game-over-actions">
+          <button class="btn primary" (click)="router.navigate(['/game/new-computer'])">
+            Новая игра
+          </button>
+          <button class="btn" (click)="router.navigate(['/'])">
+            В меню
+          </button>
         </div>
       </div>
     </div>
-  </div>
-}
-
-@if (errorMessage) {
-  <div class="error-message">
-    {{ errorMessage }}
-    <button class="error-close" (click)="errorMessage = ''">&times;</button>
-  </div>
-}
-
-@if (isLoading) {
-  <div class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <p>Загрузка...</p>
   </div>
 }
