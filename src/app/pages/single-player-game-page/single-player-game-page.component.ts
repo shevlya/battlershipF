@@ -13,7 +13,7 @@ interface GameState {
   opponentHits: string[][];
   playerShipsLeft: number;
   opponentShipsLeft: number;
-  isPlayerTurn: boolean;
+  playerTurn: boolean;
   gameOver: boolean;
   winner: string;
   lastAIShot?: number[];
@@ -58,7 +58,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
     opponentHits: this.createEmptyStringField(),
     playerShipsLeft: 0,
     opponentShipsLeft: 0,
-    isPlayerTurn: false,
+    playerTurn: false,
     gameOver: false,
     winner: ''
   };
@@ -192,7 +192,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
         this.updateGameState(response);
 
         // Если игра не окончена и следующий ход ИИ
-        if (!response.gameOver && !response.isPlayerTurn) {
+        if (!response.gameOver && !response.playerTurn) {
           // ИИ делает ход автоматически через задержку
           this.scheduleAITurn();
         }
@@ -241,7 +241,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
         this.updateGameState(response);
 
         // Если игра не окончена и снова ход ИИ
-        if (!response.gameOver && !response.isPlayerTurn) {
+        if (!response.gameOver && !response.playerTurn) {
           this.scheduleAITurn();
         }
       },
@@ -301,7 +301,7 @@ export class SinglePlayerGamePageComponent implements OnInit, OnDestroy {
   // ==================== ГЕТТЕРЫ ДЛЯ ШАБЛОНА ====================
 
   get isYourTurn(): boolean {
-    return this.gameState.isPlayerTurn && !this.gameState.gameOver;
+    return this.gameState.playerTurn && !this.gameState.gameOver;
   }
 
   get myShipsCount(): number {
