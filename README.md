@@ -4,8 +4,8 @@
 Angular CLI: 17.3.17  
 Node: 20.9.0  
 Package Manager: npm 10.1.0    
-bootstrap подключен в main.ts
-
+bootstrap подключен в main.ts    
+интерфейсы + инструкция пользователя в [Инструкция.pdf](./Инструкция.pdf)
 ## Для запуска
 
 `ng serve` - в терминальчике в VS code  
