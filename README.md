@@ -7,14 +7,11 @@ bootstrap подключен в main.ts
 
 ## Команда проекта
 Проект разработан командой из трёх человек:
-* **[nast1x](https://github.com/nast1x)** — бэкенд-разработчик, работа с базой данных   
-* **[Jane11Al](https://github.com/Jane11Al)** — бэкенд-разработчик
-* **[shevlya](https://github.com/shevlya)** — дизайнер, фронтенд-разработчик, технический писатель
+* **[@nast1x](https://github.com/nast1x)** — бэкенд-разработчик, работа с базой данных   
+* **[@Jane11Al](https://github.com/Jane11Al)** — бэкенд-разработчик
+* **[@shevlya](https://github.com/shevlya)** — дизайнер, фронтенд-разработчик, технический писатель
 
 **Серверная часть проекта** находится в отдельном репозитории:  
-https://github.com/nast1x/battleship-game-BACKEND
-
-### Серверная часть проекта находится в отдельном репозитории:
 https://github.com/nast1x/battleship-game-BACKEND
 
 ## Для запуска
