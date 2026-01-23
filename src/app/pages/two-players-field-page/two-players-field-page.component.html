@@ -18,15 +18,15 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i]?.[j] === 'S' && myHits[i]?.[j] !== 'H'"
-            [class.hit]="myHits[i]?.[j] === 'H'"
-            [class.miss]="myHits[i]?.[j] === 'M'"
+            [class.ship]="myField[i][j] === 'S' && myHits[i][j] !== 'H'"
+            [class.hit]="myHits[i][j] === 'H'"
+            [class.miss]="myHits[i][j] === 'M'"
             [class.sunk]="isShipSunk(i, j, true)">
 
-            @if (myHits[i]?.[j] === 'H') {
+            @if (myHits[i][j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i]?.[j] === 'M') {
+            @if (myHits[i][j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -48,16 +48,16 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentField[i]?.[j] === 'H'"
-            [class.miss]="opponentField[i]?.[j] === 'M'"
+            [class.hit]="opponentField[i][j] === 'H'"
+            [class.miss]="opponentField[i][j] === 'M'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && opponentField[i]?.[j] === ' '"
+            [class.selectable]="isYourTurn && opponentField[i][j] === ' '"
             (click)="onOpponentCellClick(i, j)">
 
-            @if (opponentField[i]?.[j] === 'H') {
+            @if (opponentField[i][j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentField[i]?.[j] === 'M') {
+            @if (opponentField[i][j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
