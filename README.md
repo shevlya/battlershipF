@@ -1,3 +1,7 @@
+# Battleship Game Frontend
+
+Клиентская часть многопользовательской игры "Морской бой".  
+
 ## Версии:  
 Angular CLI: 17.3.17  
 Node: 20.9.0  
@@ -29,13 +33,15 @@ https://github.com/nast1x/battleship-game-BACKEND
    ```bash
    # Скопируйте шаблон в рабочий файл
    cp src/environments/environment.example.ts src/environments/environment.ts
-
+   ```
+   
 2. **Настройте параметры в src/environments/environment.ts:**
    ```typescript
    export const environment = {
     production: false,
     apiUrl: 'http://ВАШ_IP_АДРЕС:8080'  // Укажите ваш текущий IP
    };
+   ```
 
 ## Для пользователей, у которых уже есть environment.ts
 
@@ -48,6 +54,7 @@ https://github.com/nast1x/battleship-game-BACKEND
     production: false,
     apiUrl: 'http://ВАШ_IP_АДРЕС:8080'  // Укажите ваш текущий IP
    };
+   ```
 
 ## История изменений по дням
 
