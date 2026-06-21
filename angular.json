@@ -36,6 +36,23 @@
             "scripts": []
           },
           "configurations": {
+            "docker": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.docker.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "aot": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "serviceWorker": true,
+              "ngswConfigPath": "ngsw-config.json"
+            },
             "production": {
               "budgets": [
                 {
@@ -63,14 +80,16 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "port": 4201,
-            "buildTarget": "battleship:build:development"
+            "buildTarget": "battleship:build:development",
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {
               "buildTarget": "battleship:build:production"
             },
             "development": {
-              "buildTarget": "battleship:build:development"
+              "buildTarget": "battleship:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

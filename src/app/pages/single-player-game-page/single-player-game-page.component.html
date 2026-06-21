@@ -4,7 +4,7 @@
   </div>
 
   <div class="fields-container">
-    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ СОПЕРНИКА по вам -->
+    <!-- Ваше поле - отображает ВАШИ корабли и ВЫСТРЕЛЫ КОМПЬЮТЕРА -->
     <div class="field-section">
       <h3>Ваше поле</h3>
       <div class="ships-count">Корабли: {{ myShipsCount }}/10</div>
@@ -18,15 +18,15 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.ship]="myField[i][j] === 'S' && myHits[i][j] !== 'H'"
-            [class.hit]="myHits[i][j] === 'H'"
-            [class.miss]="myHits[i][j] === 'M'"
+            [class.ship]="myField[i]?.[j] === 'S' && myHits[i]?.[j] !== 'H'"
+            [class.hit]="myHits[i]?.[j] === 'H'"
+            [class.miss]="myHits[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, true)">
 
-            @if (myHits[i][j] === 'H') {
+            @if (myHits[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (myHits[i][j] === 'M') {
+            @if (myHits[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -34,9 +34,9 @@
       </div>
     </div>
 
-    <!-- Поле соперника - отображает ТОЛЬКО ВАШИ выстрелы по сопернику -->
+    <!-- Поле компьютера - отображает ТОЛЬКО ВАШИ выстрелы -->
     <div class="field-section">
-      <h3>Поле соперника</h3>
+      <h3>Поле компьютера</h3>
       <div class="ships-count">Корабли: {{ opponentShipsCount }}/10</div>
       <div class="battlefield">
         <div class="coordinates-row">
@@ -48,16 +48,16 @@
           <div
             *ngFor="let col of columns; let j = index"
             class="cell"
-            [class.hit]="opponentField[i][j] === 'H'"
-            [class.miss]="opponentField[i][j] === 'M'"
+            [class.hit]="opponentField[i]?.[j] === 'H'"
+            [class.miss]="opponentField[i]?.[j] === 'M'"
             [class.sunk]="isShipSunk(i, j, false)"
-            [class.selectable]="isYourTurn && opponentField[i][j] === ' '"
+            [class.selectable]="isYourTurn && opponentField[i]?.[j] === ' '"
             (click)="onOpponentCellClick(i, j)">
 
-            @if (opponentField[i][j] === 'H') {
+            @if (opponentField[i]?.[j] === 'H') {
               <span class="hit-mark">✕</span>
             }
-            @if (opponentField[i][j] === 'M') {
+            @if (opponentField[i]?.[j] === 'M') {
               <span class="miss-mark">•</span>
             }
           </div>
@@ -82,14 +82,13 @@
 
     <div class="controls-center">
       <div class="turn-status" [class.your-turn]="isYourTurn" [class.opponent-turn]="!isYourTurn">
-        {{ isYourTurn ? 'Ваш ход' : 'Ход соперника' }}
+        {{ isYourTurn ? 'Ваш ход' : 'Компьютер думает...' }}
       </div>
     </div>
 
     <div class="controls-right">
       <div class="action-buttons">
         <button class="btn coral" (click)="surrender()">Сдаться</button>
-        <button class="btn" (click)="offerDraw()">Предложить ничью</button>
       </div>
     </div>
   </div>
@@ -114,36 +113,17 @@
   </div>
 }
 
-<!-- Попап для предложения ничьи -->
-@if (showDrawPopup) {
-  <div class="popup-overlay" (click)="closeDrawPopup()">
+<!-- Попап завершения игры -->
+@if (showGameOverPopup) {
+  <div class="popup-overlay" (click)="closeGameOverPopup()">
     <div class="popup-content" (click)="$event.stopPropagation()">
       <div class="popup-header">
-        <h3>Вы предложили сопернику ничью</h3>
-        <button class="popup-close" (click)="closeDrawPopup()">&times;</button>
+        <h3>Игра завершена!</h3>
       </div>
       <div class="popup-body">
-        <p>Вы предложили ничью. Ожидание ответа соперника...</p>
-        <div class="draw-actions">
-          <button class="btn" (click)="cancelDrawOffer()">Отозвать предложение</button>
-        </div>
-      </div>
-    </div>
-  </div>
-}
-
-<!-- Попап для ответа на ничью -->
-@if (showDrawResponsePopup) {
-  <div class="popup-overlay" (click)="declineDraw()">
-    <div class="popup-content" (click)="$event.stopPropagation()">
-      <div class="popup-header">
-        <h3>Предложение ничьи</h3>
-      </div>
-      <div class="popup-body">
-        <p>Соперник предложил ничью. Принять предложение?</p>
-        <div class="draw-response-actions">
-          <button class="btn primary" (click)="acceptDraw()">Принять</button>
-          <button class="btn" (click)="declineDraw()">Отклонить</button>
+        <p class="game-over-message">{{ gameOverMessage }}</p>
+        <div class="game-over-actions">
+          <button class="btn primary" (click)="closeGameOverPopup()">В главное меню</button>
         </div>
       </div>
     </div>
