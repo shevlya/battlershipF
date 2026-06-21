@@ -1,0 +1,264 @@
+<div class="placement-container">
+  <h2>Расстановка кораблей для игры с ИИ</h2>
+
+  <div class="main-content">
+    <div class="game-board-section">
+      <div class="game-board"
+           (dragover)="onDragOver($event)"
+           (drop)="onDrop($event)"
+           (dragleave)="onDragLeave($event)">
+        <div class="board-header">
+          <div class="empty-cell"></div>
+          @for (col of columns; track col) {
+            <div class="column-header">{{col}}</div>
+          }
+        </div>
+
+        @for (row of rows; track row) {
+          <div class="board-row">
+            <div class="row-header">{{row}}</div>
+            @for (col of columns; track col) {
+              <div
+                class="cell"
+                [attr.data-row]="row"
+                [attr.data-col]="col"
+                [class.has-ship]="hasShip(row, col)"
+                [class.valid-drop]="isValidDropZone(row, col)"
+                [class.invalid-drop]="isInvalidDropZone(row, col)">
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="action-buttons">
+        <!-- Заглушки для сохранения/загрузки -->
+        <button class="btn" disabled>Сохранить расстановку</button>
+        <button class="btn" (click)="generateRandom()">Сгенерировать случайно</button>
+        <button class="btn" (click)="openStrategyPopup()">Выбрать стратегию</button>
+        <button class="btn coral"
+                (click)="requestClearBoard()"
+                [disabled]="!hasAtLeastOneShip()">
+          Очистить поле
+        </button>
+
+        <button
+          (click)="startAIGame()"
+          [disabled]="!isAllShipsPlaced()"
+          class="ready-button"
+        >
+          Начать игру с ИИ
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="ships-panel">
+        <h3>Корабли для расстановки:</h3>
+        <div class="orientation-info">
+          <span class="orientation-label">Ориентация:</span>
+          <span class="orientation-value">{{isHorizontal ? 'Горизонтальная' : 'Вертикальная'}}</span>
+          <span class="orientation-hint">(двойной клик по кораблю для смены)</span>
+        </div>
+        <div class="ships-list">
+          <div class="ship-row">
+            @if (getRemainingShipsCount('battleship') > 0) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="4"
+                   data-type="battleship"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3,4]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+
+            @if (getRemainingShipsCount('cruiser') > 0) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="3"
+                   data-type="cruiser"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ship-row">
+            @if (getRemainingShipsCount('cruiser') > 1) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="3"
+                   data-type="cruiser"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2,3]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+
+            @if (getRemainingShipsCount('destroyer') > 0) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ship-row">
+            @if (getRemainingShipsCount('destroyer') > 1) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+
+            @if (getRemainingShipsCount('destroyer') > 2) {
+              <div class="ship draggable"
+                   [class.vertical]="!isHorizontal"
+                   data-size="2"
+                   data-type="destroyer"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                @for (i of [1,2]; track $index) {
+                  <div class="ship-cell"></div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ship-row">
+            @if (getRemainingShipsCount('boat') > 0) {
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+
+            @if (getRemainingShipsCount('boat') > 1) {
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+          </div>
+
+          <div class="ship-row">
+            @if (getRemainingShipsCount('boat') > 2) {
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+
+            @if (getRemainingShipsCount('boat') > 3) {
+              <div class="ship draggable"
+                   data-size="1"
+                   data-type="boat"
+                   draggable="true"
+                   (dragstart)="onDragStart($event)"
+                   (dblclick)="toggleOrientation()">
+                <div class="ship-cell"></div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Попап для подтверждения очистки поля -->
+@if (showClearConfirmation) {
+  <div class="popup-overlay" (click)="cancelClear()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Вы уверены, что хотите очистить поле?</h3>
+        <button class="popup-close" (click)="cancelClear()">&times;</button>
+      </div>
+
+      <div class="popup-body">
+        <p>Все расставленные корабли будут удалены.</p>
+        <div class="clear-actions">
+          <button class="btn coral" (click)="confirmClear()">Очистить поле</button>
+          <button class="btn" (click)="cancelClear()">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Попап для выбора стратегии -->
+@if (showStrategyPopup) {
+  <div class="popup-overlay" (click)="closeStrategyPopup()">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+      <div class="popup-header">
+        <h3>Выбор стратегии расстановки</h3>
+        <button class="popup-close" (click)="closeStrategyPopup()">&times;</button>
+      </div>
+
+      <div class="popup-body">
+        <div class="strategies-section">
+          <h4>Базовые стратегии</h4>
+          <div class="strategy-options">
+            <button class="strategy-btn" (click)="loadStrategy('coastal')">
+              <span class="strategy-name">Береговая стратегия</span>
+              <span class="strategy-desc">Корабли размещаются преимущественно у границ поля</span>
+            </button>
+
+            <button class="strategy-btn" (click)="loadStrategy('diagonal')">
+              <span class="strategy-name">Диагональная стратегия</span>
+              <span class="strategy-desc">Корабли размещаются по диагоналям поля</span>
+            </button>
+
+            <button class="strategy-btn" (click)="loadStrategy('halfField')">
+              <span class="strategy-name">Полупольная стратегия</span>
+              <span class="strategy-desc">Корабли концентрируются в одной половине поля</span>
+            </button>
+
+            <button class="strategy-btn" (click)="loadStrategy('spread')">
+              <span class="strategy-name">Стратегия разброса</span>
+              <span class="strategy-desc">Хаотичное размещение без очевидных закономерностей</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

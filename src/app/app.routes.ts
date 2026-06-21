@@ -15,6 +15,8 @@ import { ChangeAvatarPageComponent } from './pages/change-avatar-page/change-ava
 import { ChangePasswordPageComponent } from './pages/change-password-page/change-password-page.component';
 import { PlacementUserPageComponent } from './pages/placement-user-page/placement-user-page.component';
 import { TwoPlayersFieldComponent } from './pages/two-players-field-page/two-players-field-page.component';
+import {AiPlacementPageComponent} from "./pages/ai-placement-page/ai-placement-page.component";
+import {SinglePlayerGamePageComponent} from "./pages/single-player-game-page/single-player-game-page.component";
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent }, // Главная страница
@@ -27,6 +29,7 @@ export const routes: Routes = [
   { path: 'accept-game', component: AcceptGameComponent },
   { path: 'win', component: WinPageComponent},
   { path: 'lose', component: LosePageComponent },
+  { path: 'ai-placement', component: AiPlacementPageComponent},
   { path: 'ai-game', component: AiGamePageComponent},
   { path: 'profile', component: ProfilePageComponent},
   { path: 'change-avatar', component: ChangeAvatarPageComponent},
@@ -34,5 +37,11 @@ export const routes: Routes = [
   { path: 'placement', component: PlacementUserPageComponent},
   { path: 'two-players-field', component: TwoPlayersFieldComponent},
   { path: 'two-players-field/:gameId', component: TwoPlayersFieldComponent },
-  { path: '**', redirectTo: '' }
+  {
+    path: 'game/ai-placement',
+    component: AiPlacementPageComponent
+  },
+  { path: 'single-player-game', component: SinglePlayerGamePageComponent },
+  { path: '**', redirectTo: '' },
+
 ];
